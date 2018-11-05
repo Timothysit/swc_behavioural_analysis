@@ -1,5 +1,6 @@
 from pickle import load as pload
 from matplotlib import pyplot as plt
+import numpy as np
 
 def load_pickle(filepath, mode='rb'):
     return pload(open(filepath, mode))
@@ -7,6 +8,34 @@ def load_pickle(filepath, mode='rb'):
 
 def discretize_df(df, bin_width):
     pass  # todo
+
+def part_to_part(angle_diff, nose_distance, angle_threshold = None, dist_threshold = None, duration = None):
+    """
+    Determines whether there is part_to_part contact in each frame, where part is any body part of the mice
+    :param angle_diff: angle difference of the centre of each mice (?), numpy array
+    :param nose_distance: nose-to-nose distance difference, numpy array
+    :param angle_threshold:
+    :param dist_threshold:
+    :param duration: minimum duration (in frames)
+    :return nose_to_nose_score: score (currently binary) of whether there is nose-to-nose contact
+    """
+
+    assert angle_diff is np.ndarray, 'angle_diff is not a numpy array'
+    assert nose_distance is np.ndarray, 'nose_distance is not a numpy array'
+
+    part_to_part_score = np.zeros(len(angle_diff))
+    contact = np.intersect1d(
+        np.where(angle_diff < angle_threshold),
+        np.where(nose_distance < dist_threshold)
+    )
+
+    part_to_part_score[contact] = 1
+
+    # TODO: work on duration condition
+
+
+    return part_to_part_score
+
 
 
 def main(param):
