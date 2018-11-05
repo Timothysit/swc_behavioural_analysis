@@ -9,10 +9,9 @@ def calculate_angle (coord_df, female=TRUE):
     :param coordinates for nose an tail in each their own numpy array
     :return Angle of animal
     """
- length = len(coord_df['female_nose_x'])
- size=np.zeros(length)
- angles_df = pd.DataFrame({"female":
-                          , "male":})
+ column_names = ['female', 'male']
+ zero_df = np.zeros(shape=(len(coord_df),len(column_names)))
+ angles = pd.DataFrame(zero_df, columns=column_names)
 
 ### load male data points
 ### load female data points
