@@ -11,7 +11,7 @@ def calculate_angle (coord_df, female=TRUE):
     """
  column_names = ['female', 'male']
  zero_df = np.zeros(shape=(len(coord_df),len(column_names)))
- angles = pd.DataFrame(zero_df, columns=column_names)
+ angles_df = pd.DataFrame(zero_df, columns=column_names)
 
 ### load male data points
 ### load female data points
@@ -22,7 +22,7 @@ if female == TRUE:
     delta_x = coord_df['female_nose_x']-coord_df['female_tail_x']
     delta_y = coord_df['female_nose_y']-coord_df['female_tail_y']
 
-    angle = np.arctan (delta_y/delta_x)
+    angles_df['female'] = np.arctan (delta_y/delta_x)
 
 if female == FALSE:
 
