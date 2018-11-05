@@ -1,5 +1,6 @@
 import numpy as np
 import pandas as pd
+import pickle
 
 #nose_x = [30, 45]
 #tail_x = [20, 15]
@@ -42,6 +43,8 @@ def calculate_angle (coord_df, female=True, male=True):
 
     return angles_df
 
+if __name__ == '__main__':
+    coord_df = "data/body_part_loc_df.pkl"
+    calculate_angle(coord_df, female =True, male=True)
 
-#print(calculate_angle(test_df, female=True))
 
