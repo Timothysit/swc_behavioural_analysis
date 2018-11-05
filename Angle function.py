@@ -15,3 +15,9 @@ t_y = tail_y
 nose_tail_coor_df = pd.DataFrame({"nose_x": n_x[:-1],
                                   "direction": direction,
                                   "time": time})
+
+
+delta_x = n_x - t_x
+delta_y = n_y - t_y
+
+angles_df = numpy.arctan(delta_y/delta_x)
