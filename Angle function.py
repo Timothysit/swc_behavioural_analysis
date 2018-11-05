@@ -24,10 +24,6 @@ if female == TRUE:
 
     angles_df['female'] = np.arctan (delta_y/delta_x)
 
-if female == FALSE:
+#if female == FALSE:
 
 
-delta_x = n_x - t_x
-delta_y = n_y - t_y
-
-angles_df = numpy.arctan(delta_y/delta_x)
