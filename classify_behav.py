@@ -1,38 +1,41 @@
 from pickle import load as pload
 
-import numpy as np
-
 
 def load_pickle(filepath, mode='rb'):
     return pload(open(filepath, mode))
 
 
-fp = './data/body_part_loc_df.pkl'
-
-data = load_pickle(fp)
-
-
-def rotate_coordinate(xy=tuple(), angle=float()):
-    if xy.__len__() < 1 or not isinstance(xy[0], float):
-        raise ValueError
-
-    x = xy[0] * np.cos(angle) + xy[1] * np.sin(angle)
-    y = - xy[0] * np.sin(angle) + xy[1] * np.cos(angle)
-    return x, y
-
-def discretize_df(df, bin_duration)
+def discretize_df(df, bin_width):
     pass  # todo
 
-def extract_classification_automated():
-    pass  # use kmeans or tSNE, then clustering + apply classification to data later
 
-def apply_categories(df, bin_duration):
-    # bin data
-    bin_duration = .2  # msec
-    discretize_df(df, bin_duration)
+def main(param):
+    # load distances, angles
+    distances = load_pickle(param['f_dist'])
+    angles = load_pickle(param['f_angle'])
 
-    # make binary matrix for conditions
+    # discretize
+    distances_disc = discretize_df(distances, param['bin_width'])
 
-    # add label based on bin binary labels
+    # angle difference vector: F-M
 
-    pass
+    # classify by criteria
+
+    # tSNE, clustering
+
+    # save both results -> do visualization from output file
+
+
+if __name__ == '__main__':
+    f_dist = './data/distance_df.pkl'
+    f_angle = './data/angles_df.pkl'
+    f_out = './data/classification.pkl'
+
+    bin_width = .2  # sec
+
+    param = {'f_dist': f_dist,
+             'f_angle': f_angle,
+             'f_out': f_out,
+             'bin_width': bin_width}
+
+    main(param)
