@@ -34,7 +34,7 @@ def calculate_angle (coord_df, female=True, male=True):
         delta_x = coord_df['male_nose_x'] - coord_df['male_tail_x']
         delta_y = coord_df['male_nose_y'] - coord_df['male_tail_y']
 
-        angles_df['female'] = np.arctan(delta_y / delta_x)
+        angles_df['male'] = np.arctan(delta_y / delta_x)
 
     # save as pickle file in data folder
     with open("data/angles_df" + ".pkl", "wb") as f:
@@ -43,7 +43,10 @@ def calculate_angle (coord_df, female=True, male=True):
     return angles_df
 
 if __name__ == '__main__':
-    coord_df = "data/body_part_loc_df.pkl"
+
+    coord_df_filename = "data/body_part_loc_df.pkl"
+    with open(coord_df_filename, "rb") as f:
+        coord_df = pickle.load(f)
     calculate_angle(coord_df, female =True, male=True)
 
 
