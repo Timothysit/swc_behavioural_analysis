@@ -7,6 +7,12 @@ def calculate_angle (nose_x, nose_y, tail_x, tail_y):
     :param coordinates for nose an tail in each their own numpy array
     :return Angle of animal
     """
+### load male data points
+### calculate nose-tail-distance for x and y
+### write angles column 1 (= male)
+
+###
+
 n_x = nose_x
 n_y = nose_y
 t_x = tail_x
