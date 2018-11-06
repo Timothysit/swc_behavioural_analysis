@@ -1,11 +1,19 @@
+from pickle import dump as pdump
 from pickle import load as pload
-import pandas as pd
+
 import numpy as np
+import pandas as pd
 from matplotlib import pyplot as plt
 
 
 def load_pickle(filepath, mode='rb'):
     return pload(open(filepath, mode))
+
+
+def save_pickle(filepath, objects, mode='w'):
+    with open(filepath, mode) as f:
+        for o in objects:
+            pdump(o, f)
 
 
 def discretize_df(data_vec, bin_width):
@@ -115,14 +123,13 @@ def debug_plot(dataframe, interval=None):
         currDF = dataframe[dcol].as_matrix()
 
         if not interval:
-            interval = [0, currDF.__len__()-1]
+            interval = [0, currDF.__len__() - 1]
 
         plt.plot(currDF[interval[0]:interval[1]])
 
     plt.legend(dval, bbox_to_anchor=(1.1, 1.05))
     plt.show()
 
-    print(' ')
 
 def main(param):
     # load distances, angles
@@ -133,23 +140,51 @@ def main(param):
     angles_diff = angles['female'] - angles['male']
     angles_diff = angles_diff.as_matrix()
 
-    distances_discrete = discretize_vars(angles_diff, distances, param)
+    angles_diff_disc, distances_discrete, bins = discretize_vars(angles_diff, distances, param)
+    assert angles_diff_disc.shape[0] == distances_discrete.shape[0], 'bin count mismatch'
 
     if param['debug']:
         debug_plot(distances_discrete)
 
-    # classify by criteria
+    # classify by criteria: for each behavioral gesture
+    classif_scores = pd.DataFrame()
+    classif_intervals = pd.DataFrame()
+
+    for motif, constraints in param['motifs'].items():
+        if not constraints:
+            continue
+        print(motif, constraints)
+        # classify
+        classif_scores[motif], classif_intervals[motif] = \
+            part_to_part(angles_diff_disc, distances_discrete[constraints['distance_name']],
+                         angle_threshold_tuple=constraints['angle_range'],
+                         dist_threshold=constraints['distance_thresh'],
+                         duration=param['motif_duration_min'])
+
+    save_pickle(param['f_out'], (classif_scores, classif_intervals), 'w')
 
     # tSNE, clustering
 
     # save both results -> do visualization from output file
-    return distances, angles
+
+    print('debug')
 
 
 if __name__ == '__main__':
     f_dist = './data/distance_df.pkl'
     f_angle = './data/angles_df.pkl'
     f_out = './data/classification.pkl'
+
+    # motifs of behavioral poses: [distance name, distance threshold (px), angle diff range threshold]
+    motifs = {'nose2body': [],  # M 2 F comparisons
+              'nose2nose': {'distance_name': 'male_nose_to_female_nose', 'distance_thresh': 50,
+                            'angle_range': (-135, 135)},
+              'nose2genitals': [],
+              'above': [],
+              'following': [],
+              'standTogether': [],
+              'standAlond': [],
+              'walkAlone': []}
 
     param = {'debug': True,
              'f_dist': f_dist,
@@ -158,6 +193,8 @@ if __name__ == '__main__':
              'bin_width': .2,  # sec
              'sampling_rate': 30,  # Hz
              'thresh_dist': 30,  # px
-             'thresh_angle': 45}  # degree rad
+             'thresh_angle': 45,
+             'motifs': motifs,
+             'motif_duration_min': .5 * 30}  # degree rad
 
-    distances, angles = main(param)
+    main(param)
