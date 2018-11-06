@@ -7,6 +7,15 @@ def load_pickle(filepath, mode='rb'):
 
 
 def discretize_df(data_vec, bin_width):
+    """
+    Discretizes the given data vector into bins of size bin_width.
+    :param data_vec: vector of data samples
+    :param bin_width: duration of bins, in number of samples
+    :return:
+    """
+
+    assert data_vec is np.ndarray, 'data_vec is not a nunpy array'
+
     nr_bins = round(len(data_vec) / bin_width)
     bins = np.linspace(0, len(data_vec), nr_bins + 1, True).astype(np.int)
     bin_counts = np.diff(bins)
@@ -14,6 +23,37 @@ def discretize_df(data_vec, bin_width):
     discrete = np.add.reduceat(data_vec, bins[:-1]) / bin_counts
 
     return discrete, bins
+
+def contiguous_regions(condition):
+    """Finds contiguous True regions of the boolean array "condition". Returns
+    a 2D array where the first column is the start index of the region and the
+    second column is the end index."""
+
+    # Find the indicies of changes in "condition"
+    d = np.diff(condition,n=1, axis=0)
+    idx, _ = d.nonzero()
+
+    # We need to start things after the change in "condition". Therefore,
+    # we'll shift the index by 1 to the right. -JK
+    # LB this copy to increment is horrible but I get
+    # ValueError: output array is read-only without it
+
+    mutable_idx = np.array(idx)
+    mutable_idx +=  1
+    idx = mutable_idx
+
+    if condition[0]:
+        # If the start of condition is True prepend a 0
+        idx = np.r_[0, idx]
+
+    if condition[-1]:
+        # If the end of condition is True, append the length of the array
+        idx = np.r_[idx, condition.size] # Edit
+
+    # Reshape the result into two columns
+    idx.shape = (-1,2)
+    return idx
+
 
 def part_to_part(angle_diff, nose_distance, angle_threshold = None, dist_threshold = None, duration = None):
     """
@@ -40,7 +80,15 @@ def part_to_part(angle_diff, nose_distance, angle_threshold = None, dist_thresho
     # TODO: work on duration condition
     # TODO: -> durations determined by discretization, so here calculations in # frames
 
-    return part_to_part_score_vec
+    thresh_bool = .5
+    part_to_part_intervals = []
+    for start, stop in contiguous_regions(part_to_part_score_vec > thresh_bool):
+        if (stop - start > duration):
+            part_to_part_intervals.append([start, stop])
+
+    part_to_part_intervals = np.array(part_to_part_intervals)
+
+    return part_to_part_score_vec, part_to_part_intervals
 
 
 
