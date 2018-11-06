@@ -6,8 +6,14 @@ def load_pickle(filepath, mode='rb'):
     return pload(open(filepath, mode))
 
 
-def discretize_df(df, bin_width):
-    pass  # todo
+def discretize_df(data_vec, bin_width):
+    nr_bins = round(len(data_vec) / bin_width)
+    bins = np.linspace(0, len(data_vec), nr_bins + 1, True).astype(np.int)
+    bin_counts = np.diff(bins)
+
+    discrete = np.add.reduceat(data_vec, bins[:-1]) / bin_counts
+
+    return discrete, bins
 
 def part_to_part(angle_diff, nose_distance, angle_threshold = None, dist_threshold = None, duration = None):
     """
@@ -23,18 +29,18 @@ def part_to_part(angle_diff, nose_distance, angle_threshold = None, dist_thresho
     assert angle_diff is np.ndarray, 'angle_diff is not a numpy array'
     assert nose_distance is np.ndarray, 'nose_distance is not a numpy array'
 
-    part_to_part_score = np.zeros(len(angle_diff))
+    part_to_part_score_vec = np.zeros(len(angle_diff))
     contact = np.intersect1d(
         np.where(angle_diff < angle_threshold),
         np.where(nose_distance < dist_threshold)
     )
 
-    part_to_part_score[contact] = 1
+    part_to_part_score_vec[contact] = 1
 
     # TODO: work on duration condition
+    # TODO: -> durations determined by discretization, so here calculations in # frames
 
-
-    return part_to_part_score
+    return part_to_part_score_vec
 
 
 
