@@ -1,6 +1,8 @@
 from pickle import load as pload
-from matplotlib import pyplot as plt
+
 import numpy as np
+from matplotlib import pyplot as plt
+
 
 def load_pickle(filepath, mode='rb'):
     return pload(open(filepath, mode))
@@ -24,13 +26,14 @@ def discretize_df(data_vec, bin_width):
 
     return discrete, bins
 
+
 def contiguous_regions(condition):
     """Finds contiguous True regions of the boolean array "condition". Returns
     a 2D array where the first column is the start index of the region and the
     second column is the end index."""
 
     # Find the indicies of changes in "condition"
-    d = np.diff(condition,n=1, axis=0)
+    d = np.diff(condition, n=1, axis=0)
     idx, _ = d.nonzero()
 
     # We need to start things after the change in "condition". Therefore,
@@ -39,7 +42,7 @@ def contiguous_regions(condition):
     # ValueError: output array is read-only without it
 
     mutable_idx = np.array(idx)
-    mutable_idx +=  1
+    mutable_idx += 1
     idx = mutable_idx
 
     if condition[0]:
@@ -48,14 +51,14 @@ def contiguous_regions(condition):
 
     if condition[-1]:
         # If the end of condition is True, append the length of the array
-        idx = np.r_[idx, condition.size] # Edit
+        idx = np.r_[idx, condition.size]  # Edit
 
     # Reshape the result into two columns
-    idx.shape = (-1,2)
+    idx.shape = (-1, 2)
     return idx
 
 
-def part_to_part(angle_diff, nose_distance, angle_threshold = None, dist_threshold = None, duration = None):
+def part_to_part(angle_diff, nose_distance, angle_threshold=None, dist_threshold=None, duration=None):
     """
     Determines whether there is part_to_part contact in each frame, where part is any body part of the mice
     :param angle_diff: angle difference of the centre of each mice (?), numpy array
@@ -89,7 +92,6 @@ def part_to_part(angle_diff, nose_distance, angle_threshold = None, dist_thresho
     part_to_part_intervals = np.array(part_to_part_intervals)
 
     return part_to_part_score_vec, part_to_part_intervals
-
 
 
 def main(param):
