@@ -1,5 +1,5 @@
 from pickle import load as pload
-
+import pandas as pd
 import numpy as np
 from matplotlib import pyplot as plt
 
@@ -16,7 +16,7 @@ def discretize_df(data_vec, bin_width):
     :return:
     """
 
-    assert data_vec is np.ndarray, 'data_vec is not a nunpy array'
+    # assert data_vec is np.ndarray, 'data_vec is not a nunpy array'
 
     nr_bins = round(len(data_vec) / bin_width)
     bins = np.linspace(0, len(data_vec), nr_bins + 1, True).astype(np.int)
@@ -25,6 +25,19 @@ def discretize_df(data_vec, bin_width):
     discrete = np.add.reduceat(data_vec, bins[:-1]) / bin_counts
 
     return discrete, bins
+
+
+def discretize_vars(angles_diff, distances, param):
+    bins = []
+    # discretize
+    bin_width = round(param['bin_width'] * param['sampling_rate'])
+    angles_diff_disc, _ = discretize_df(angles_diff, bin_width)
+    distances_col = list(distances.columns.values)
+    # for c in distances_col: print(c)
+    distances_discrete = pd.DataFrame(columns=distances_col)
+    for dcol in distances_col:
+        distances_discrete[dcol], bins = discretize_df(distances[dcol], bin_width)
+    return angles_diff_disc, distances_discrete, bins
 
 
 def contiguous_regions(condition):
@@ -60,12 +73,12 @@ def contiguous_regions(condition):
     return idx
 
 
-def part_to_part(angle_diff, nose_distance, angle_threshold=None, dist_threshold=None, duration=None):
+def part_to_part(angle_diff, nose_distance, angle_threshold_tuple=None, dist_threshold=None, duration=None):
     """
     Determines whether there is part_to_part contact in each frame, where part is any body part of the mice
     :param angle_diff: angle difference of the centre of each mice (?), numpy array
     :param nose_distance: nose-to-nose distance difference, numpy array
-    :param angle_threshold:
+    :param angle_threshold_tuple: tuple of (lower, upper) boundary for angle difference
     :param dist_threshold:
     :param duration: minimum duration (in frames)
     :return nose_to_nose_score: score (currently binary) of whether there is nose-to-nose contact
@@ -76,14 +89,14 @@ def part_to_part(angle_diff, nose_distance, angle_threshold=None, dist_threshold
 
     part_to_part_score_vec = np.zeros(len(angle_diff))
     contact = np.intersect1d(
-        np.where(angle_diff < angle_threshold),
+        np.where(angle_threshold_tuple[0] <= angle_diff <= angle_threshold_tuple[1]),
         np.where(nose_distance < dist_threshold)
     )
 
     part_to_part_score_vec[contact] = 1
 
-    # TODO: work on duration condition
-    # TODO: -> durations determined by discretization, so here calculations in # frames
+    # TO DO: work on duration condition
+    # TO DO: -> durations determined by discretization, so here calculations in # frames
 
     thresh_bool = .5
     part_to_part_intervals = []
@@ -96,6 +109,21 @@ def part_to_part(angle_diff, nose_distance, angle_threshold=None, dist_threshold
     return part_to_part_score_vec, part_to_part_intervals
 
 
+def debug_plot(dataframe, interval=None):
+    dval = list(dataframe.columns.values)
+    for dcol in dval:
+        currDF = dataframe[dcol].as_matrix()
+
+        if not interval:
+            interval = [0, currDF.__len__()-1]
+
+        plt.plot(currDF[interval[0]:interval[1]])
+
+    plt.legend(dval, bbox_to_anchor=(1.1, 1.05))
+    plt.show()
+
+    print(' ')
+
 def main(param):
     # load distances, angles
     distances = load_pickle(param['f_dist'])
@@ -103,13 +131,12 @@ def main(param):
 
     # angle difference vector: F-M
     angles_diff = angles['female'] - angles['male']
+    angles_diff = angles_diff.as_matrix()
 
-    # discretize
-    angles_diff_disc = discretize_df(angles_diff.as_matrix(), param)
-    distances_disc = discretize_df(distances, param)
+    distances_discrete = discretize_vars(angles_diff, distances, param)
 
-    plt.plot(angles_diff.as_matrix())
-    plt.show()
+    if param['debug']:
+        debug_plot(distances_discrete)
 
     # classify by criteria
 
@@ -124,7 +151,8 @@ if __name__ == '__main__':
     f_angle = './data/angles_df.pkl'
     f_out = './data/classification.pkl'
 
-    param = {'f_dist': f_dist,
+    param = {'debug': True,
+             'f_dist': f_dist,
              'f_angle': f_angle,
              'f_out': f_out,
              'bin_width': .2,  # sec
