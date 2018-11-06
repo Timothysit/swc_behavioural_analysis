@@ -3,6 +3,9 @@ import pickle
 import seaborn as sns
 import numpy as np
 import matplotlib.animation as animation
+import load_data # for the filtering functions
+from scipy import fftpack
+import cv2 # for dealing with video
 
 def visualise_distance(distance_df):
     """
@@ -193,9 +196,223 @@ def animate_distance():
     # animate distance
     pass
 
+def compare_filters(unfiltered_df, body_part, fs = 30):
+    """
+    Plots signal before and after filtering, and also compare between filters
+    :param unfiltered_df:
+    :param body_part:
+    :return:
+    """
+    # TODO: compare filters (both frequency and time domain)
+    body_part_x = unfiltered_df[body_part + '_x']
+    body_part_y = unfiltered_df[body_part + '_y']
+
+    frame = np.arange(len(body_part_x))
+    time = frame / fs
+
+    body_part_x_l_filterd = load_data.smooth_data(body_part_x, n = 20, method = 'lfilt')
+    body_part_x_savgol_filtered = load_data.smooth_data(body_part_x, method = 'savgol',
+                                                         savgol_window=51, savgol_degree=3)
+    # usual savgol_window = 51, and savegol_degree = 3
+
+    # time domain comparison of filters
+    plt.figure()
+    ax1 = plt.subplot(1, 1, 1)
+    ax1.plot(time, body_part_x) # change alpha values
+    ax1.plot(time, body_part_x_l_filterd)
+    ax1.plot(time, body_part_x_savgol_filtered)
+    ax1.legend(['No filter', 'Linear filter', 'Savgol filter'], frameon = False)
+    plt.title(['Male nose x position'])
+    sns.despine(top = True, right = True)
+    plt.show()
+
+    # frequency domain comparison of filters
+    plt.figure()
+    ax2 = plt.subplot(1, 1, 1)
+    ax2.plot(fftpack.fft(body_part_x)) # change alpha values
+    ax2.plot(fftpack.fft(body_part_x_l_filterd))
+    ax2.plot(fftpack.fft(body_part_x_savgol_filtered))
+    ax2.legend(['No filter', 'Linear filter', 'Savgol filter'], frameon = False)
+    plt.title(['Male nose x position'])
+    ax2.set_xlabel('Frequency (Hz)')
+    ax2.set_ylabel('Power')
+    sns.despine(top = True, right = True)
+    plt.show()
+
+    # frequency domain comparison attempt 2
+    plt.figure()
+    ax2 = plt.subplot(1, 1, 1)
+    freq, power = plot_freq_spectrum(body_part_x)
+    ax2.plot(freq, power) # change alpha values
+
+    freq, power = plot_freq_spectrum(body_part_x_l_filterd)
+    ax2.plot(freq, power)
+
+    freq, power = plot_freq_spectrum(body_part_x_savgol_filtered)
+    ax2.plot(freq, power)
+
+    ax2.legend(['No filter', 'Linear filter', 'Savgol filter'], frameon = False)
+    plt.title(['Male nose x position'])
+    ax2.set_xlabel('Frequency (Hz)')
+    ax2.set_ylabel('Power')
+    sns.despine(top = True, right = True)
+    plt.show()
 
 
-def main(plot_distance = True, plot_coord = True, plot_animation = True):
+
+
+def plot_freq_spectrum(time_series, fs = 30, plot = False):
+    """
+    see:
+    https://ericstrong.org/fast-fourier-transforms-in-python/
+    https://plot.ly/matplotlib/fft/
+    :param time_series:
+    :param fs: sampling rate
+    :return:
+    """
+    # TODO: Make plot of frequency domain for coordinate position
+
+    n = len(time_series)  # length of signal
+    # Nyquist sampling limit
+    T = 1/fs
+    x = np.linspace(0.0, 1.0/(2.0 * T), int(n/2)) # not too sure what 1/2T does...
+
+    filterd_signal = fftpack.fft(time_series)
+    y = 2/n * np.abs(time_series[0:np.int(n/2)]) # positive freqs only, and normalisation by dividing by N
+
+    if plot:
+        plt.figure()
+        plt.plot(x, y)
+        plt.xlabel('Frequency (Hz)')
+        plt.ylabel('Power')
+    else:
+        return x, y
+
+
+def get_video_frames(video_file_path, coord_df):
+    """
+    Obtains video frames (and do some pre-processing to make things more manageable, such as gray-scaling)
+    :param video_file_path:
+    :return:
+    """
+    cap = cv2.VideoCapture(video_file_path)
+
+    frame_num = 0
+
+    # first attempt to plot video
+    while (True):
+        # Capture frame-by-frame
+        ret, frame = cap.read()
+
+        # gray-scale the image
+        frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+
+        horizontal_offset = 300
+
+        # set location of body parts
+        male_nose = np.array([coord_df['male_nose_x'] - horizontal_offset, coord_df['male_nose_y']])
+        female_nose = np.array([coord_df['female_nose_x'] - horizontal_offset, coord_df['female_nose_y']])
+
+        male_tail = np.array([coord_df['male_tail_x'] - horizontal_offset, coord_df['male_tail_y']])
+        female_tail = np.array([coord_df['female_tail_x'] - horizontal_offset, coord_df['female_tail_y']])
+
+        male_left_ear = np.array([coord_df['male_left_ear_x'] - horizontal_offset, coord_df['male_left_ear_y']])
+        male_right_ear = np.array([coord_df['male_right_ear_x'] - horizontal_offset, coord_df['male_right_ear_y']])
+
+        female_left_ear = np.array([coord_df['female_left_ear_x'] - horizontal_offset, coord_df['female_left_ear_y']])
+        female_right_ear = np.array([coord_df['female_right_ear_x'] - horizontal_offset, coord_df['female_right_ear_y']])
+
+
+        # draw circle of body parts
+        frame = cv2.circle(frame, center= tuple(male_nose[:, frame_num].astype(int)), radius = 20,
+                           color = (255,0,0), thickness = -1)
+
+        frame = cv2.circle(frame, center= tuple(male_tail[:, frame_num].astype(int)), radius = 20,
+                           color = (255,0,0), thickness = -1)
+
+        frame = cv2.circle(frame, center=tuple(male_left_ear[:, frame_num].astype(int)), radius=20,
+                           color=(255, 0, 0), thickness=-1)
+
+        frame = cv2.circle(frame, center=tuple(male_right_ear[:, frame_num].astype(int)), radius=20,
+                           color=(255, 0, 0), thickness=-1)
+
+
+        frame = cv2.circle(frame, center=tuple(female_nose[:, frame_num].astype(int)), radius=20,
+                           color=(0, 0, 255), thickness=-1)
+
+        frame = cv2.circle(frame, center=tuple(female_tail[:, frame_num].astype(int)), radius=20,
+                           color=(0, 0, 255), thickness=-1)
+
+        frame = cv2.circle(frame, center=tuple(female_left_ear[:, frame_num].astype(int)), radius=20,
+                           color=(0, 0, 255), thickness=-1)
+
+        frame = cv2.circle(frame, center=tuple(female_right_ear[:, frame_num].astype(int)), radius=20,
+                           color=(0, 0, 255), thickness=-1)
+
+
+        # draw lines connecting body parts (nose-tail, nose-ears)
+
+        frame = cv2.line(frame, tuple(male_nose[:, frame_num].astype(int)),
+                         tuple(male_tail[:, frame_num].astype(int)),
+                         color=(255, 0, 0), thickness = 1)
+
+        frame = cv2.line(frame, tuple(male_nose[:, frame_num].astype(int)),
+                         tuple(male_left_ear[:, frame_num].astype(int)),
+                         color=(255, 0, 0), thickness = 1)
+
+        frame = cv2.line(frame, tuple(male_nose[:, frame_num].astype(int)),
+                         tuple(male_right_ear[:, frame_num].astype(int)),
+                         color=(255, 0, 0), thickness = 1)
+
+        frame = cv2.line(frame, tuple(female_nose[:, frame_num].astype(int)),
+                         tuple(female_tail[:, frame_num].astype(int)),
+                         color=(0, 0, 255), thickness=1)
+
+        frame = cv2.line(frame, tuple(female_nose[:, frame_num].astype(int)),
+                         tuple(female_left_ear[:, frame_num].astype(int)),
+                         color=(0, 0, 255), thickness=1)
+
+        frame = cv2.line(frame, tuple(female_nose[:, frame_num].astype(int)),
+                         tuple(female_right_ear[:, frame_num].astype(int)),
+                         color=(0, 0, 255), thickness=1)
+
+
+
+
+
+        frame_num = frame_num + 1
+
+
+        # Display the resulting frame
+        cv2.imshow('frame', frame)
+        if cv2.waitKey(1) & 0xFF == ord('q'):
+            break
+
+    # When everything done, release the capture
+    cap.release()
+    cv2.destroyAllWindows()
+
+
+    frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+    # width = int(cap.get(cv2.CV_CAP_PROP_FRAME_WIDTH))
+    # height = int(cap.get(cv2.CV_CAP_PROP_FRAME_HEIGHT))
+
+    # return frames
+
+def viz_ethogram(ethogram_vec):
+    """
+    visualises ethogram
+    :param ethogram_vec:
+    :return:
+    """
+
+
+
+
+
+
+def main(plot_distance = False, plot_coord = False, plot_animation = False, plot_filtering = False,
+         plot_video = False, plot_ethogram = False):
     # load data
     if plot_distance is True:
         file_name = 'data/distance_df.pkl'
@@ -221,6 +438,24 @@ def main(plot_distance = True, plot_coord = True, plot_animation = True):
         body_part = ['male_nose', 'female_nose']
         animate_location_2part(coord_df, body_part, export = False)
 
+    if plot_filtering is True:
+        unfiltered_coord_file_name = 'data/body_part_loc_unfiltered_df.pkl'
+        with open(unfiltered_coord_file_name, 'rb') as f:
+            body_part_unfiltered_df = pickle.load(f)
+
+        compare_filters(body_part_unfiltered_df, body_part = 'male_nose')
+
+    if plot_video is True:
+        video_path = 'data/18_10_29_mf_interaction_right.avi'
+        frames = get_video_frames(video_path, coord_df)
+        # play the video (checking)
+
+    if plot_ethogram is True:
+        ethogram_file = ''
+
+
+
 
 if __name__ == '__main__':
-    main(plot_distance = False, plot_coord = False, plot_animation = True)
+    main(plot_distance = False, plot_coord = False, plot_animation = True,
+         plot_filtering = False, plot_video = True)
