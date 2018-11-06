@@ -30,7 +30,9 @@ def discretize_df(data_vec, bin_width):
 def contiguous_regions(condition):
     """Finds contiguous True regions of the boolean array "condition". Returns
     a 2D array where the first column is the start index of the region and the
-    second column is the end index."""
+    second column is the end index.
+    Source: https://stackoverflow.com/a/4495197/3751373
+    """
 
     # Find the indicies of changes in "condition"
     d = np.diff(condition, n=1, axis=0)
