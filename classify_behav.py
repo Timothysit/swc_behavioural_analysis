@@ -48,6 +48,14 @@ def discretize_vars(angles_diff, distances, param):
     return angles_diff_disc, distances_discrete, bins
 
 
+def calculate_velocity(x, y, sampling_rate):
+    dist_x = np.ediff1d(x, to_end=np.array([np.nan]))
+    dist_y = np.ediff1d(y, to_end=np.array([np.nan]))
+    dist = np.sqrt(dist_x + dist_y)
+    velocity = dist * sampling_rate
+    return velocity
+
+
 def contiguous_regions(condition):
     """Finds contiguous True regions of the boolean array "condition". Returns
     a 2D array where the first column is the start index of the region and the
@@ -175,16 +183,26 @@ if __name__ == '__main__':
     f_angle = './data/angles_df.pkl'
     f_out = './data/classification.pkl'
 
+    distance_thresh = 30  # px : general threshold for contact behaviours
+    velocity_thresh = 5  # px/sec : general threshold for moving vs steady behaviours
+
     # motifs of behavioral poses: [distance name, distance threshold (px), angle diff range threshold]
-    motifs = {'nose2body': [],  # M 2 F comparisons
-              'nose2nose': {'distance_name': 'male_nose_to_female_nose', 'distance_thresh': 50,
-                            'angle_range': (-135, 135)},
-              'nose2genitals': [],
-              'above': [],
-              'following': [],
-              'standTogether': [],
-              'standAlond': [],
-              'walkAlone': []}
+    motifs = {'nose2body': {'distance_name': 'male_nose_to_female_tail', 'distance_thresh': distance_thresh,
+                                'angle_range': ()},  # M 2 F comparisons
+              'nose2nose': {'distance_name': 'male_nose_to_female_nose', 'distance_thresh': distance_thresh,
+                            'angle_range': (-135, 135), 'velocity_range': (0, velocity_thresh)},
+              'nose2genitals': {'distance_name': 'male_nose_to_female_tail', 'distance_thresh': distance_thresh,
+                                'angle_range': ()},
+              'above': {'distance_name': 'XX', 'distance_thresh': distance_thresh,
+                                'angle_range': ()},
+              'following': {'distance_name': 'XX', 'distance_thresh': distance_thresh,
+                                'angle_range': ()},
+              'standTogether': {'distance_name': 'XX', 'distance_thresh': distance_thresh,
+                                'angle_range': ()},
+              'standAlond': {'distance_name': 'XX', 'distance_thresh': distance_thresh,
+                                'angle_range': ()},
+              'walkAlone': {'distance_name': 'XX', 'distance_thresh': distance_thresh,
+                                'angle_range': ()}}
 
     param = {'debug': True,
              'f_dist': f_dist,
