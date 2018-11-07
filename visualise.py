@@ -6,6 +6,8 @@ import matplotlib.animation as animation
 import load_data # for the filtering functions
 from scipy import fftpack
 import cv2 # for dealing with video
+from bokeh.palettes import all_palettes
+
 
 def visualise_distance(distance_df):
     """
@@ -288,6 +290,19 @@ def plot_freq_spectrum(time_series, fs = 30, plot = False):
     else:
         return x, y
 
+def hex_to_rgb(value):
+    value = value.lstrip('#')
+    lv = len(value)
+    return tuple(int(value[i:i + lv // 3], 16) for i in range(0, lv, lv // 3))
+
+def rgb_to_bgr(rgbcolor):
+    rgbcolor = rgbcolor
+    b = rgbcolor[2]
+    g = rgbcolor[1]
+    r = rgbcolor[0]
+    bgr = (b, g, r)
+    return(bgr)
+
 
 def get_video_frames(video_file_path, coord_df):
     """
@@ -298,6 +313,26 @@ def get_video_frames(video_file_path, coord_df):
     cap = cv2.VideoCapture(video_file_path)
 
     frame_num = 0
+    text_i = 0
+
+    # parameters for text
+    font = cv2.FONT_HERSHEY_SIMPLEX
+    bottomLeftCornerOfText = (1150, 960)
+    fontScale = 3
+    fontColor = (255, 255, 255)  # default color if no
+    lineType = 2
+    thickness = 7
+
+    # color for each behaviour
+    colors_hex = all_palettes["Viridis"][8]  # can change which color palette to use
+    colors_rgb = []
+    colors_bgr = []
+
+    for color in colors_hex:  # change from hex to color rgb
+        colors_rgb.append(hex_to_rgb(color))
+    for color in colors_rgb:  # change from rgb to bgr
+        colors_bgr.append(rgb_to_bgr(color))
+    colors = colors_bgr
 
     # first attempt to plot video
     while (True):
@@ -305,80 +340,109 @@ def get_video_frames(video_file_path, coord_df):
         ret, frame = cap.read()
 
         # gray-scale the image
-        frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+        #frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
 
-        horizontal_offset = 300
+        horizontal_offset = 320
+        vertical_offset = -30
 
         # set location of body parts
-        male_nose = np.array([coord_df['male_nose_x'] - horizontal_offset, coord_df['male_nose_y']])
-        female_nose = np.array([coord_df['female_nose_x'] - horizontal_offset, coord_df['female_nose_y']])
+        male_nose = np.array([coord_df['male_nose_x'] - horizontal_offset, coord_df['male_nose_y']+vertical_offset])
+        female_nose = np.array([coord_df['female_nose_x'] - horizontal_offset, coord_df['female_nose_y']+vertical_offset])
 
-        male_tail = np.array([coord_df['male_tail_x'] - horizontal_offset, coord_df['male_tail_y']])
-        female_tail = np.array([coord_df['female_tail_x'] - horizontal_offset, coord_df['female_tail_y']])
+        male_tail = np.array([coord_df['male_tail_x'] - horizontal_offset, coord_df['male_tail_y']+vertical_offset])
+        female_tail = np.array([coord_df['female_tail_x'] - horizontal_offset, coord_df['female_tail_y']+vertical_offset])
 
-        male_left_ear = np.array([coord_df['male_left_ear_x'] - horizontal_offset, coord_df['male_left_ear_y']])
-        male_right_ear = np.array([coord_df['male_right_ear_x'] - horizontal_offset, coord_df['male_right_ear_y']])
+        male_left_ear = np.array([coord_df['male_left_ear_x'] - horizontal_offset, coord_df['male_left_ear_y']+vertical_offset])
+        male_right_ear = np.array([coord_df['male_right_ear_x'] - horizontal_offset, coord_df['male_right_ear_y']+vertical_offset])
 
-        female_left_ear = np.array([coord_df['female_left_ear_x'] - horizontal_offset, coord_df['female_left_ear_y']])
-        female_right_ear = np.array([coord_df['female_right_ear_x'] - horizontal_offset, coord_df['female_right_ear_y']])
+        female_left_ear = np.array([coord_df['female_left_ear_x'] - horizontal_offset, coord_df['female_left_ear_y']+vertical_offset])
+        female_right_ear = np.array([coord_df['female_right_ear_x'] - horizontal_offset, coord_df['female_right_ear_y']+vertical_offset])
 
 
         # draw circle of body parts
         frame = cv2.circle(frame, center= tuple(male_nose[:, frame_num].astype(int)), radius = 20,
-                           color = (255,0,0), thickness = -1)
+                           color = (255,255,255), thickness = -1)
 
         frame = cv2.circle(frame, center= tuple(male_tail[:, frame_num].astype(int)), radius = 20,
-                           color = (255,0,0), thickness = -1)
+                           color = (255,255,255), thickness = -1)
 
         frame = cv2.circle(frame, center=tuple(male_left_ear[:, frame_num].astype(int)), radius=20,
-                           color=(255, 0, 0), thickness=-1)
+                           color=(255,255,255), thickness=-1)
 
         frame = cv2.circle(frame, center=tuple(male_right_ear[:, frame_num].astype(int)), radius=20,
-                           color=(255, 0, 0), thickness=-1)
+                           color=(255,255,255), thickness=-1)
 
 
         frame = cv2.circle(frame, center=tuple(female_nose[:, frame_num].astype(int)), radius=20,
-                           color=(0, 0, 255), thickness=-1)
+                           color=(0, 0, 0), thickness=-1)
 
         frame = cv2.circle(frame, center=tuple(female_tail[:, frame_num].astype(int)), radius=20,
-                           color=(0, 0, 255), thickness=-1)
+                           color=(0, 0, 0), thickness=-1)
 
         frame = cv2.circle(frame, center=tuple(female_left_ear[:, frame_num].astype(int)), radius=20,
-                           color=(0, 0, 255), thickness=-1)
+                           color=(0, 0, 0), thickness=-1)
 
         frame = cv2.circle(frame, center=tuple(female_right_ear[:, frame_num].astype(int)), radius=20,
-                           color=(0, 0, 255), thickness=-1)
+                           color=(0, 0, 0), thickness=-1)
 
 
         # draw lines connecting body parts (nose-tail, nose-ears)
 
         frame = cv2.line(frame, tuple(male_nose[:, frame_num].astype(int)),
                          tuple(male_tail[:, frame_num].astype(int)),
-                         color=(255, 0, 0), thickness = 1)
+                         color=(255,255,255), thickness = 1)
 
         frame = cv2.line(frame, tuple(male_nose[:, frame_num].astype(int)),
                          tuple(male_left_ear[:, frame_num].astype(int)),
-                         color=(255, 0, 0), thickness = 1)
+                         color=(255,255,255), thickness = 1)
 
         frame = cv2.line(frame, tuple(male_nose[:, frame_num].astype(int)),
                          tuple(male_right_ear[:, frame_num].astype(int)),
-                         color=(255, 0, 0), thickness = 1)
+                         color=(255,255,255), thickness = 1)
 
         frame = cv2.line(frame, tuple(female_nose[:, frame_num].astype(int)),
                          tuple(female_tail[:, frame_num].astype(int)),
-                         color=(0, 0, 255), thickness=1)
+                         color=(0,0,0), thickness=1)
 
         frame = cv2.line(frame, tuple(female_nose[:, frame_num].astype(int)),
                          tuple(female_left_ear[:, frame_num].astype(int)),
-                         color=(0, 0, 255), thickness=1)
+                         color=(0, 0, 0), thickness=1)
 
         frame = cv2.line(frame, tuple(female_nose[:, frame_num].astype(int)),
                          tuple(female_right_ear[:, frame_num].astype(int)),
-                         color=(0, 0, 255), thickness=1)
+                         color=(0, 0, 0), thickness=1)
 
+        # Insert text describing behaviour:
 
+        # test vector containing behaviour (remove when real data)
+        behav_vector = ["Nose2Body", "Nose2Body", "Nose2Body", "Nose2Body", "Nose2Nose", "Nose2Nose", "Nose2Nose", "Nose2Nose", "Nose2Genitals", "Nose2Genitals", "Nose2Genitals", "Nose2Genitals", "Above", "Above", "Above", "Above", "Following", "Following", "Following", "Following", "StandTogether", "StandTogether", "StandTogether", "StandTogether", "StandAlone", "StandAlone", "StandAlone", "StandAlone", "StandAlone", "WalkAlone", "WalkAlone", "WalkAlone", "WalkAlone", "WalkAlone", "Emmett", "Emmett", "Sucks", "Sucks"]
 
+        # assigning colors to behaviour of the frame
+        if behav_vector[text_i] == "Nose2Body":
+            fontColor = colors[0]
+        elif behav_vector[text_i] == "Nose2Nose":
+            fontColor = colors[1]
+        elif behav_vector[text_i] == "Nose2Genitals":
+            fontColor = colors[2]
+        elif behav_vector[text_i] == "Above":
+            fontColor = colors[3]
+        elif behav_vector[text_i] == "Following":
+            fontColor = colors[4]
+        elif behav_vector[text_i] == "StandTogether":
+            fontColor = colors[5]
+        elif behav_vector[text_i] == "StandAlone":
+            fontColor = colors[6]
+        elif behav_vector[text_i] == "WalkAlone":
+            fontColor = colors[7]
 
+        # add the text
+        frame = cv2.putText(frame, behav_vector[text_i], bottomLeftCornerOfText, font, fontScale, fontColor, thickness, lineType )
+
+        # iterate through the vector list (this shoulden't be neccesary for the real vector, only for the test)
+        if text_i <= len(behav_vector)-2:
+            text_i += 1
+        else:
+            text_i = 0
 
         frame_num = frame_num + 1
 
