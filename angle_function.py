@@ -27,20 +27,26 @@ def calculate_angle (coord_df, female=True, male=True):
     #should update the function to use the average between the two ears as opposed to the tail coordinate
 
     if female == True:
-        delta_x = coord_df['female_nose_x']-coord_df['female_tail_x']
-        delta_y = coord_df['female_nose_y']-coord_df['female_tail_y']
+        fem_ear_diff_x = coord_df['female_right_ear_x']-coord_df['female_left_ear_x']
+        fem_ear_diff_y = coord_df['female_right_ear_y']-coord_df['female_left_ear_y']
+
+        delta_x = coord_df['female_nose_x']- fem_ear_diff_x
+        delta_y = coord_df['female_nose_y']- fem_ear_diff_y
 
         angles_df['female'] = np.arctan (delta_y/delta_x)
 
     if male == True:
-        delta_x = coord_df['male_nose_x'] - coord_df['male_tail_x']
-        delta_y = coord_df['male_nose_y'] - coord_df['male_tail_y']
+        male_ear_diff_x = coord_df['male_right_ear_x'] - coord_df['male_left_ear_x']
+        male_ear_diff_y = coord_df['male_right_ear_y'] - coord_df['male_left_ear_y']
+
+        delta_x = coord_df['male_nose_x'] - male_ear_diff_x
+        delta_y = coord_df['male_nose_y'] - male_ear_diff_y
 
         angles_df['male'] = np.arctan(delta_y / delta_x)
 
     # save as pickle file in data folder
-    with open("data/angles_df" + ".pkl", "wb") as f:
-        pickle.dump(angles_df, f)
+    with open("data/angles_ear_df" + ".pkl", "wb") as f:
+        pickle.dump(angles_ear_df, f)
 
     return angles_df
 
