@@ -316,15 +316,16 @@ def get_video_frames(video_file_path, coord_df):
     text_i = 0
 
     # parameters for text
+
     font = cv2.FONT_HERSHEY_SIMPLEX
-    bottomLeftCornerOfText = (1150, 960)
-    fontScale = 3
+    bottomLeftCornerOfText = (1080, 960)
+    fontScale = 3.5
     fontColor = (255, 255, 255)  # default color if no
     lineType = 2
     thickness = 7
 
     # color for each behaviour
-    colors_hex = all_palettes["Viridis"][8]  # can change which color palette to use
+    colors_hex = all_palettes["Set2"][8]  # can change which color palette to use
     colors_rgb = []
     colors_bgr = []
 
@@ -415,7 +416,7 @@ def get_video_frames(video_file_path, coord_df):
         # Insert text describing behaviour:
 
         # test vector containing behaviour (remove when real data)
-        behav_vector = ["Nose2Body", "Nose2Body", "Nose2Body", "Nose2Body", "Nose2Nose", "Nose2Nose", "Nose2Nose", "Nose2Nose", "Nose2Genitals", "Nose2Genitals", "Nose2Genitals", "Nose2Genitals", "Above", "Above", "Above", "Above", "Following", "Following", "Following", "Following", "StandTogether", "StandTogether", "StandTogether", "StandTogether", "StandAlone", "StandAlone", "StandAlone", "StandAlone", "StandAlone", "WalkAlone", "WalkAlone", "WalkAlone", "WalkAlone", "WalkAlone", "Emmett", "Emmett", "Sucks", "Sucks"]
+        behav_vector = ["Nose2Body", "Nose2Body", "Nose2Body", "Nose2Body", "Nose2Nose", "Nose2Nose", "Nose2Nose", "Nose2Nose", "Nose2Genitals", "Nose2Genitals", "Nose2Genitals", "Nose2Genitals", "Above", "Above", "Above", "Above", "Following", "Following", "Following", "Following", "StandTogether", "StandTogether", "StandTogether", "StandTogether", "StandAlone", "StandAlone", "StandAlone", "StandAlone", "StandAlone", "WalkAlone", "WalkAlone", "WalkAlone", "WalkAlone", "WalkAlone", "Emmett", "Sucks", "Sucks", "Sucks", "Sucks"]
 
         # assigning colors to behaviour of the frame
         if behav_vector[text_i] == "Nose2Body":
@@ -434,6 +435,8 @@ def get_video_frames(video_file_path, coord_df):
             fontColor = colors[6]
         elif behav_vector[text_i] == "WalkAlone":
             fontColor = colors[7]
+        else:
+            fontColor = (255, 255, 255)
 
         # add the text
         frame = cv2.putText(frame, behav_vector[text_i], bottomLeftCornerOfText, font, fontScale, fontColor, thickness, lineType )
