@@ -102,13 +102,19 @@ def part_to_part(angle_diff, distance_measure, velocity, angle_threshold_tuple=N
     :return nose_to_nose_score: score (currently binary) of whether there is nose-to-nose contact
     """
 
-    assert angle_diff is np.ndarray, 'angle_diff is not a numpy array'
-    assert distance_measure is np.ndarray, 'nose_distance is not a numpy array'
+    print(type(distance_measure))
+
+    assert isinstance(angle_diff, np.ndarray), 'angle_diff is not a numpy array'
+    assert isinstance(distance_measure, np.ndarray), 'distance_measure is not a numpy array'
 
     part_to_part_score_vec = np.zeros(len(angle_diff))
     contact = np.intersect1d(
         np.where(angle_threshold_tuple[0] <= angle_diff <= angle_threshold_tuple[1]),
-        np.where(distance_range[0] <= distance_measure <= distance_range[1]),
+        np.where(distance_range[0] <= distance_measure <= distance_range[1])
+    )
+
+    contact = np.intersect1d(
+        contact,
         np.where(velocity_thresh[0] <= velocity <= velocity_thresh[1])
     )
 
@@ -190,9 +196,11 @@ def main(param):
         if not constraints:
             continue
         print(motif, constraints)
+        # type
+        distance_measure = np.array(distances_discrete[constraints['distance_name']])
         # classify
         classif_scores[motif], classif_intervals[motif] = \
-            part_to_part(angles_diff_disc, distances_discrete[constraints['distance_name']], velocity,
+            part_to_part(angles_diff_disc, distance_measure, velocity,
                          angle_threshold_tuple=constraints['angle_range'],
                          distance_range=constraints['distance_range'],
                          duration=param['motif_duration_min'],
