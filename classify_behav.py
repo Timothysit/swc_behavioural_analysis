@@ -102,20 +102,24 @@ def part_to_part(angle_diff, distance_measure, velocity, angle_threshold_tuple=N
     :return nose_to_nose_score: score (currently binary) of whether there is nose-to-nose contact
     """
 
-    print(type(distance_measure))
+    # print(type(distance_measure))
 
     assert isinstance(angle_diff, np.ndarray), 'angle_diff is not a numpy array'
     assert isinstance(distance_measure, np.ndarray), 'distance_measure is not a numpy array'
 
+    angle_threshold_tuple = np.array(angle_threshold_tuple)
+    distance_range = np.array(distance_range)
+    velocity_thresh = np.array(velocity_thresh)
+
     part_to_part_score_vec = np.zeros(len(angle_diff))
     contact = np.intersect1d(
-        np.where(angle_threshold_tuple[0] <= angle_diff <= angle_threshold_tuple[1]),
-        np.where(distance_range[0] <= distance_measure <= distance_range[1])
+        np.where(np.array(angle_threshold_tuple[0] <= angle_diff) <= angle_threshold_tuple[1]),
+        np.where(np.array(distance_range[0] <= distance_measure) <= distance_range[1])
     )
 
     contact = np.intersect1d(
         contact,
-        np.where(velocity_thresh[0] <= velocity <= velocity_thresh[1])
+        np.where(np.array(velocity_thresh[0] <= velocity) <= velocity_thresh[1])
     )
 
     part_to_part_score_vec[contact] = 1
@@ -125,7 +129,7 @@ def part_to_part(angle_diff, distance_measure, velocity, angle_threshold_tuple=N
 
     thresh_bool = .5
     part_to_part_intervals = []
-    for start, stop in contiguous_regions(part_to_part_score_vec > thresh_bool):
+    for start, stop in contiguous_regions(part_to_part_score_vec):  #  > thresh_bool
         if (stop - start > duration):
             part_to_part_intervals.append([start, stop])
 
@@ -200,8 +204,8 @@ def main(param):
         distance_measure = np.array(distances_discrete[constraints['distance_name']])
         # classify
         classif_scores[motif], classif_intervals[motif] = \
-            part_to_part(angles_diff_disc, distance_measure, velocity,
-                         angle_threshold_tuple=constraints['angle_range'],
+            part_to_part(angles_diff_disc, distance_measure, velocity_disc,
+                         angle_threshold_tuple=np.deg2rad(constraints['angle_range']),
                          distance_range=constraints['distance_range'],
                          duration=param['motif_duration_min'],
                          velocity_thresh=constraints['velocity_range'])
@@ -254,7 +258,7 @@ if __name__ == '__main__':
                                 'angle_range': (0, 360), 'velocity_range': (velocity_thresh, np.inf)},
               }
 
-    param = {'debug': True,
+    param = {'debug': False,
              'f_dist': f_dist,
              'f_angle': f_angle,
              'f_velocity': f_velocity,
