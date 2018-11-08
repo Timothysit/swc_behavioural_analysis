@@ -82,6 +82,7 @@ def make_plots():
 
     plt.figure()
     venn3([set1, set2, set3], ('nose2body', 'nose2nose', 'nose2genitals'))
+    plt.title('Total interval count: ' + str(coldata.shape[0]))
 
     plt.tight_layout()
     plt.savefig('./data/classification_rule_based_venn' + ext, dpi=dpi)
