@@ -122,7 +122,7 @@ def viz_cluster_ethogram(clusterd_labels, method = 'sns'):
         colors = all_palettes['Viridis'][4]
         mapper = LinearColorMapper(palette=colors, low=label_df.Behaviour.min(), high=label_df.Behaviour.max())
 
-        p = figure(plot_width=800, plot_height=150, title="Ethogram",
+        p = figure(plot_width=600, plot_height=150, title="Ethogram",
                    toolbar_location=None, tools="", x_axis_location="below",
                    x_range = (min(label_df['Time']), max(label_df['Time'])), y_range = (0.75, 1.25))
 
@@ -217,7 +217,7 @@ def extract_cluster_video(cluster_labels, cut_video = False, video_path = None, 
 
     return cluster_max_time
 
-def viz_cluster_factors(coord_df_binned, cluster_labels):
+def viz_cluster_factors(coord_df_binned, cluster_labels, save_fig = True):
     """
     Visualise the value of each feature for each cluster (using a heatmap)
     :param coord_df_binned:
@@ -236,7 +236,7 @@ def viz_cluster_factors(coord_df_binned, cluster_labels):
 
     # coord_df_binned_normal = coord_df_binned_normal.sort_values(coord_df_binned_normal['cluster'] )
 
-    fig, axn = plt.subplots(2, 2, sharex=True, sharey=False)
+    fig, axn = plt.subplots(2, 2, sharex=True, sharey=False, figsize = (8, 8))
     cbar_ax = fig.add_axes([.91, .3, .03, .4])
     for i, ax in enumerate(axn.flat):
         sns.heatmap(coord_df_binned_normal[cluster_labels == i], ax=ax,
@@ -249,8 +249,41 @@ def viz_cluster_factors(coord_df_binned, cluster_labels):
 
     fig.text(0.5, 0.04, 'Behavioural Feature', ha = 'center', fontsize= 14)
     fig.text(0.04, 0.5, 'Time bin', va = 'center', rotation = 'vertical', fontsize=14)
+
+    # set context to make things larger
+    # sns.set_context('talk')
+
+    if save_fig is True:
+        plt.savefig(fname = 'figures/feature_analysis.png', dpi = 300)
+
     plt.show()
 
+def viz_cluster_prop(cluster_labels, save_fig = True):
+    """
+    Visualise the proportion of each cluster
+    :param cluster_labels:
+    :param save_fig:
+    :return:
+    """
+
+    unique_label, counts = np.unique(cluster_labels, return_counts = True)
+    prop = counts / sum(counts)
+
+    # consistent colour palettes with previous plot
+    colors = all_palettes['Viridis'][4]
+    plt.rcParams.update({'font.size': 14})
+
+    plt.figure(figsize=(6, 6))
+    ax = sns.barplot(x = unique_label + 1, y = prop, palette = colors)
+    sns.despine(top = True, bottom = True)
+    # ax.set(xlabel = 'Cluster', ylabel = 'Proportion')
+    ax.set_xlabel('Cluster')
+    ax.set_ylabel('Proportion')
+
+    if save_fig is True:
+        plt.savefig(fname = 'figures/clustering_labels_prop.png', dpi = 300)
+
+    plt.show()
 
 
 def main():
@@ -296,7 +329,7 @@ def main():
     # extract_cluster_video(labels, cut_video = True, video_path = '/media/timothysit/Seagate Expansion Drive1/18_10_29_mf_interaction_right.avi')
 
     # feature analysis on clusters
-    viz_cluster_factors(coord_df_binned, labels)
+    # viz_cluster_factors(coord_df_binned, labels)
 
     # plot cluster
     # viz_cluster(tsne_results, labels)
@@ -304,7 +337,15 @@ def main():
     # extract cluster time bins
 
     # visualise clusters over time
-    # viz_cluster_ethogram(labels, method = 'bokeh')
+    viz_cluster_ethogram(labels, method = 'bokeh')
+
+    # save clustering results
+    # with open('data/cluster_result' + '.pkl', 'wb') as f:
+    #     pickle.dump(labels, f)
+
+    # visualise cluster proportions
+    viz_cluster_prop(labels)
+
 
 if __name__ == '__main__':
     main()
