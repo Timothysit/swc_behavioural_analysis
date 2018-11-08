@@ -117,17 +117,36 @@ def part_to_part(angle_diff, distance_measure, velocity, angle_threshold_tuple=N
     velocity_thresh = np.array(velocity_thresh)
 
     part_to_part_score_vec = np.zeros(len(angle_diff))
-    contact = np.intersect1d(
-        np.where(np.array(angle_threshold_tuple[0] <= angle_diff) <= angle_threshold_tuple[1]),
-        np.where(np.array(distance_range[0] <= distance_measure) <= distance_range[1])
-    )
 
-    contact = np.intersect1d(
-        contact,
-        np.where(np.array(velocity_thresh[0] <= velocity) <= velocity_thresh[1])
-    )
+    a_up = np.where(angle_threshold_tuple[0] <= np.abs(angle_diff))
+    a_dw = np.where(angle_threshold_tuple[1] >= np.abs(angle_diff))
 
-    part_to_part_score_vec[contact] = 1
+    d_up = np.where(distance_range[0] <= distance_measure)
+    d_dw = np.where(distance_range[1] >= distance_measure)
+
+    v_up = np.where(velocity_thresh[0] <= velocity)
+    v_dw = np.where(velocity_thresh[1] >= velocity)
+
+    a_i = np.intersect1d(a_up, a_dw)
+    d_i = np.intersect1d(d_up, d_dw)
+    v_i = np.intersect1d(v_up, v_dw)
+
+    c_i = np.intersect1d(a_i, d_i)
+    c_ii = np.intersect1d(c_i, v_i)
+
+    part_to_part_score_vec[c_ii] = 1
+
+    # contact = np.intersect1d(
+    #     np.where(np.array(angle_threshold_tuple[0] <= np.abs(angle_diff)) <= angle_threshold_tuple[1]),
+    #     np.where(np.array(distance_range[0] <= distance_measure) <= distance_range[1])
+    # )
+    #
+    # contact = np.intersect1d(
+    #     contact,
+    #     np.where(np.array(velocity_thresh[0] <= velocity) <= velocity_thresh[1])
+    # )
+    #
+    # part_to_part_score_vec[contact] = 1
 
     # TO DO: work on duration condition
     # TO DO: -> durations determined by discretization, so here calculations in # frames
@@ -233,16 +252,16 @@ def main(param):
 
 if __name__ == '__main__':
     f_dist = './data/distance_df.pkl'
-    f_angle = './data/angles_df.pkl'
+    f_angle = './data/angles_ear_df.pkl'
     f_velocity = './data/centre_loc_df.pkl'
     f_out = './data/classification.pkl'
 
-    discretization_bin_duration = .2  # sec
-    motif_bin_duration = .1  # sec
+    discretization_bin_duration = .1  # sec
+    motif_bin_duration = .2  # sec
     sampling_rate_video = 30  # Hz
 
-    distance_thresh = 30  # px : general threshold for contact behaviours
-    velocity_thresh = 50  # px/sec : general threshold for moving vs steady behaviours
+    distance_thresh = 300  # px : general threshold for contact behaviours
+    velocity_thresh = 100  # px/sec : general threshold for moving vs steady behaviours
 
     # motifs of behavioral poses: [distance name, distance threshold (px), angle diff range threshold]
     motifs = {'nose2body': {'distance_name': 'male_nose_to_female_centre', 'distance_range': (0, distance_thresh),
