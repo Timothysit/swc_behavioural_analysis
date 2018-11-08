@@ -3,6 +3,9 @@ from pickle import load as pload
 
 import numpy as np
 import pandas as pd
+from matplotlib import use as muse
+
+muse('SVG')
 from matplotlib import pyplot as plt
 
 
@@ -91,7 +94,8 @@ def contiguous_regions(condition):
     return idx
 
 
-def part_to_part(angle_diff, distance_measure, velocity, angle_threshold_tuple=None, distance_range=None, duration=None, velocity_thresh=None):
+def part_to_part(angle_diff, distance_measure, velocity, angle_threshold_tuple=None, distance_range=None, duration=None,
+                 velocity_thresh=None):
     """
     Determines whether there is part_to_part contact in each frame, where part is any body part of the mice
     :param angle_diff: angle difference of the centre of each mice (?), numpy array
@@ -127,9 +131,9 @@ def part_to_part(angle_diff, distance_measure, velocity, angle_threshold_tuple=N
     # TO DO: work on duration condition
     # TO DO: -> durations determined by discretization, so here calculations in # frames
 
-    thresh_bool = .5
+    # thresh_bool = .5
     part_to_part_intervals = []
-    for start, stop in contiguous_regions(part_to_part_score_vec):  #  > thresh_bool
+    for start, stop in contiguous_regions(part_to_part_score_vec):  # > thresh_bool
         if (stop - start > duration):
             part_to_part_intervals.append([start, stop])
 
@@ -173,7 +177,7 @@ def main(param):
 
     # calculate velocity for M
     velocity, dist = calculate_velocity(velocity_data['male_centre_x'], velocity_data['male_centre_y'],
-                                  param['sampling_rate'])
+                                        param['sampling_rate'])
 
     bin_width = round(param['bin_width'] * param['sampling_rate'])
     velocity_disc, _ = discretize_df(velocity, bin_width)
@@ -226,7 +230,7 @@ if __name__ == '__main__':
     f_out = './data/classification.pkl'
 
     discretization_bin_duration = .2  # sec
-    motif_bin_duration = .6  # sec
+    motif_bin_duration = .1  # sec
     sampling_rate_video = 30  # Hz
 
     distance_thresh = 30  # px : general threshold for contact behaviours
@@ -234,7 +238,8 @@ if __name__ == '__main__':
 
     # motifs of behavioral poses: [distance name, distance threshold (px), angle diff range threshold]
     motifs = {'nose2body': {'distance_name': 'male_nose_to_female_centre', 'distance_range': (0, distance_thresh),
-                                'angle_range': (45, 135), 'velocity_range': (0, velocity_thresh)},  # M 2 F comparisons  # todo todo: caveat: only one side to body
+                            'angle_range': (45, 135), 'velocity_range': (0, velocity_thresh)},
+              # M 2 F comparisons  # todo todo: caveat: only one side to body
 
               'nose2nose': {'distance_name': 'male_nose_to_female_nose', 'distance_range': (0, distance_thresh),
                             'angle_range': (-135, 135), 'velocity_range': (0, velocity_thresh)},
@@ -242,20 +247,22 @@ if __name__ == '__main__':
               'nose2genitals': {'distance_name': 'male_nose_to_female_tail', 'distance_range': (0, distance_thresh),
                                 'angle_range': (45, 315), 'velocity_range': (0, velocity_thresh)},
 
-              'above': {'distance_name': 'male_nose_to_female_centre', 'distance_range': (0, distance_thresh/2),
-                                'angle_range': (135, 225), 'velocity_range': (0, velocity_thresh)},
+              'above': {'distance_name': 'male_nose_to_female_centre', 'distance_range': (0, distance_thresh / 2),
+                        'angle_range': (135, 225), 'velocity_range': (0, velocity_thresh)},
 
               'following': {'distance_name': 'male_nose_to_female_tail', 'distance_range': (0, distance_thresh * 2),
-                                'angle_range': (135, 225), 'velocity_range': (velocity_thresh, np.inf)},
+                            'angle_range': (135, 225), 'velocity_range': (velocity_thresh, np.inf)},
 
               'standTogether': {'distance_name': 'male_tail_to_female_tail', 'distance_range': (0, distance_thresh),
                                 'angle_range': (90, 270), 'velocity_range': (0, velocity_thresh)},
 
-              'standAlone': {'distance_name': 'male_centre_to_female_centre', 'distance_range': (distance_thresh, np.inf),
-                                'angle_range': (0, 360), 'velocity_range': (0, velocity_thresh)},
+              'standAlone': {'distance_name': 'male_centre_to_female_centre',
+                             'distance_range': (distance_thresh, np.inf),
+                             'angle_range': (0, 360), 'velocity_range': (0, velocity_thresh)},
 
-              'walkAlone': {'distance_name': 'male_centre_to_female_centre', 'distance_range': (distance_thresh, np.inf),
-                                'angle_range': (0, 360), 'velocity_range': (velocity_thresh, np.inf)},
+              'walkAlone': {'distance_name': 'male_centre_to_female_centre',
+                            'distance_range': (distance_thresh, np.inf),
+                            'angle_range': (0, 360), 'velocity_range': (velocity_thresh, np.inf)},
               }
 
     param = {'debug': False,
