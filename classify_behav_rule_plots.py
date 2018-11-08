@@ -35,8 +35,9 @@ def make_plots():
     plt.gca().set_aspect(300)
     plt.yticks(labels_len, labels)
     plt.xlabel('# frame bin (100 ms)')
+    # plt.tight_layout()
+    plt.savefig('./data/classification_rule_based_ethogram' + ext, bbox_inches='tight', dpi=dpi)
     plt.show()
-    plt.savefig('./data/classification_rule_based_ethogram' + ext, dpi=dpi)
 
     # proportions
     prop = []
@@ -56,14 +57,10 @@ def make_plots():
     plt.ylim((0, 1))
     plt.ylabel('Proportion')  # [classified (100ms) intervals / all intervals]
     seaborn.despine(top=True, right=True)
+    plt.tight_layout()
     plt.savefig('./data/classification_rule_based_prop' + ext, dpi=dpi)
     plt.show()
 
-
-    pass
-
-
-# make_plots()
 
 if __name__ == '__main__':
     make_plots()
