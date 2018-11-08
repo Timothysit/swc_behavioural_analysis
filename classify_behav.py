@@ -3,9 +3,10 @@ from pickle import load as pload
 
 import numpy as np
 import pandas as pd
-from matplotlib import use as muse
 
-muse('SVG')
+# from matplotlib import use as muse
+# muse('SVG')
+
 from matplotlib import pyplot as plt
 
 
@@ -13,7 +14,7 @@ def load_pickle(filepath, mode='rb'):
     return pload(open(filepath, mode))
 
 
-def save_pickle(filepath, objects, mode='w'):
+def save_pickle(filepath, objects, mode='wb'):
     with open(filepath, mode) as f:
         for o in objects:
             pdump(o, f)
@@ -53,8 +54,8 @@ def discretize_vars(angles_diff, distances, param):
 
 def calculate_velocity(x, y, sampling_rate):
     padding = 0  # np.nan
-    dist_x = np.ediff1d(x, to_end=np.array([padding]))
-    dist_y = np.ediff1d(y, to_end=np.array([padding]))
+    dist_x = np.abs(np.ediff1d(x, to_end=np.array([padding])))
+    dist_y = np.abs(np.ediff1d(y, to_end=np.array([padding])))
     dist = np.sqrt(dist_x + dist_y)
     velocity = dist * sampling_rate
 
@@ -116,30 +117,56 @@ def part_to_part(angle_diff, distance_measure, velocity, angle_threshold_tuple=N
     velocity_thresh = np.array(velocity_thresh)
 
     part_to_part_score_vec = np.zeros(len(angle_diff))
-    contact = np.intersect1d(
-        np.where(np.array(angle_threshold_tuple[0] <= angle_diff) <= angle_threshold_tuple[1]),
-        np.where(np.array(distance_range[0] <= distance_measure) <= distance_range[1])
-    )
 
-    contact = np.intersect1d(
-        contact,
-        np.where(np.array(velocity_thresh[0] <= velocity) <= velocity_thresh[1])
-    )
+    a_up = np.where(angle_threshold_tuple[0] <= np.abs(angle_diff))
+    a_dw = np.where(angle_threshold_tuple[1] >= np.abs(angle_diff))
 
-    part_to_part_score_vec[contact] = 1
+    d_up = np.where(distance_range[0] <= distance_measure)
+    d_dw = np.where(distance_range[1] >= distance_measure)
+
+    v_up = np.where(velocity_thresh[0] <= velocity)
+    v_dw = np.where(velocity_thresh[1] >= velocity)
+
+    a_i = np.intersect1d(a_up, a_dw)
+    d_i = np.intersect1d(d_up, d_dw)
+    v_i = np.intersect1d(v_up, v_dw)
+
+    c_i = np.intersect1d(a_i, d_i)
+    c_ii = np.intersect1d(c_i, v_i)
+
+    part_to_part_score_vec[c_ii] = 1
+
+    # contact = np.intersect1d(
+    #     np.where(np.array(angle_threshold_tuple[0] <= np.abs(angle_diff)) <= angle_threshold_tuple[1]),
+    #     np.where(np.array(distance_range[0] <= distance_measure) <= distance_range[1])
+    # )
+    #
+    # contact = np.intersect1d(
+    #     contact,
+    #     np.where(np.array(velocity_thresh[0] <= velocity) <= velocity_thresh[1])
+    # )
+    #
+    # part_to_part_score_vec[contact] = 1
 
     # TO DO: work on duration condition
     # TO DO: -> durations determined by discretization, so here calculations in # frames
 
+    if 0:
+        z = [500, 1000]
+        plt.plot(angle_diff[z[0]:z[1]] * 800)
+        plt.plot(distance_measure[z[0]:z[1]])
+        plt.plot(velocity[z[0]:z[1]])
+        plt.show()
+
     # thresh_bool = .5
-    part_to_part_intervals = []
-    for start, stop in contiguous_regions(part_to_part_score_vec):  # > thresh_bool
-        if (stop - start > duration):
-            part_to_part_intervals.append([start, stop])
+    # part_to_part_intervals = []
+    # for start, stop in contiguous_regions(part_to_part_score_vec):  # > thresh_bool
+    #     if (stop - start > duration):
+    #         part_to_part_intervals.append([start, stop])
+    #
+    # part_to_part_intervals = np.array(part_to_part_intervals)
 
-    part_to_part_intervals = np.array(part_to_part_intervals)
-
-    return part_to_part_score_vec, part_to_part_intervals
+    return part_to_part_score_vec  # , part_to_part_intervals
 
 
 def debug_plot_df(dataframe, interval=None):
@@ -206,15 +233,15 @@ def main(param):
         print(motif, constraints)
         # type
         distance_measure = np.array(distances_discrete[constraints['distance_name']])
-        # classify
-        classif_scores[motif], classif_intervals[motif] = \
+        # classify   # , classif_intervals[motif] = \
+        classif_scores[motif] = \
             part_to_part(angles_diff_disc, distance_measure, velocity_disc,
                          angle_threshold_tuple=np.deg2rad(constraints['angle_range']),
                          distance_range=constraints['distance_range'],
                          duration=param['motif_duration_min'],
                          velocity_thresh=constraints['velocity_range'])
 
-    save_pickle(param['f_out'], (classif_scores, classif_intervals), 'w')
+    save_pickle(param['f_out'], (classif_scores, classif_intervals))
 
     # tSNE, clustering
 
@@ -225,16 +252,16 @@ def main(param):
 
 if __name__ == '__main__':
     f_dist = './data/distance_df.pkl'
-    f_angle = './data/angles_df.pkl'
+    f_angle = './data/angles_ear_df.pkl'
     f_velocity = './data/centre_loc_df.pkl'
     f_out = './data/classification.pkl'
 
-    discretization_bin_duration = .2  # sec
-    motif_bin_duration = .1  # sec
+    discretization_bin_duration = .1  # sec
+    motif_bin_duration = .2  # sec
     sampling_rate_video = 30  # Hz
 
-    distance_thresh = 30  # px : general threshold for contact behaviours
-    velocity_thresh = 50  # px/sec : general threshold for moving vs steady behaviours
+    distance_thresh = 300  # px : general threshold for contact behaviours
+    velocity_thresh = 100  # px/sec : general threshold for moving vs steady behaviours
 
     # motifs of behavioral poses: [distance name, distance threshold (px), angle diff range threshold]
     motifs = {'nose2body': {'distance_name': 'male_nose_to_female_centre', 'distance_range': (0, distance_thresh),
