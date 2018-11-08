@@ -3,9 +3,10 @@ from pickle import load as pload
 
 import numpy as np
 import pandas as pd
-from matplotlib import use as muse
 
-muse('SVG')
+# from matplotlib import use as muse
+# muse('SVG')
+
 from matplotlib import pyplot as plt
 
 
@@ -13,7 +14,7 @@ def load_pickle(filepath, mode='rb'):
     return pload(open(filepath, mode))
 
 
-def save_pickle(filepath, objects, mode='w'):
+def save_pickle(filepath, objects, mode='wb'):
     with open(filepath, mode) as f:
         for o in objects:
             pdump(o, f)
@@ -53,8 +54,8 @@ def discretize_vars(angles_diff, distances, param):
 
 def calculate_velocity(x, y, sampling_rate):
     padding = 0  # np.nan
-    dist_x = np.ediff1d(x, to_end=np.array([padding]))
-    dist_y = np.ediff1d(y, to_end=np.array([padding]))
+    dist_x = np.abs(np.ediff1d(x, to_end=np.array([padding])))
+    dist_y = np.abs(np.ediff1d(y, to_end=np.array([padding])))
     dist = np.sqrt(dist_x + dist_y)
     velocity = dist * sampling_rate
 
@@ -131,15 +132,22 @@ def part_to_part(angle_diff, distance_measure, velocity, angle_threshold_tuple=N
     # TO DO: work on duration condition
     # TO DO: -> durations determined by discretization, so here calculations in # frames
 
+    if 0:
+        z = [500, 1000]
+        plt.plot(angle_diff[z[0]:z[1]] * 800)
+        plt.plot(distance_measure[z[0]:z[1]])
+        plt.plot(velocity[z[0]:z[1]])
+        plt.show()
+
     # thresh_bool = .5
-    part_to_part_intervals = []
-    for start, stop in contiguous_regions(part_to_part_score_vec):  # > thresh_bool
-        if (stop - start > duration):
-            part_to_part_intervals.append([start, stop])
+    # part_to_part_intervals = []
+    # for start, stop in contiguous_regions(part_to_part_score_vec):  # > thresh_bool
+    #     if (stop - start > duration):
+    #         part_to_part_intervals.append([start, stop])
+    #
+    # part_to_part_intervals = np.array(part_to_part_intervals)
 
-    part_to_part_intervals = np.array(part_to_part_intervals)
-
-    return part_to_part_score_vec, part_to_part_intervals
+    return part_to_part_score_vec  # , part_to_part_intervals
 
 
 def debug_plot_df(dataframe, interval=None):
@@ -206,15 +214,15 @@ def main(param):
         print(motif, constraints)
         # type
         distance_measure = np.array(distances_discrete[constraints['distance_name']])
-        # classify
-        classif_scores[motif], classif_intervals[motif] = \
+        # classify   # , classif_intervals[motif] = \
+        classif_scores[motif] = \
             part_to_part(angles_diff_disc, distance_measure, velocity_disc,
                          angle_threshold_tuple=np.deg2rad(constraints['angle_range']),
                          distance_range=constraints['distance_range'],
                          duration=param['motif_duration_min'],
                          velocity_thresh=constraints['velocity_range'])
 
-    save_pickle(param['f_out'], (classif_scores, classif_intervals), 'w')
+    save_pickle(param['f_out'], (classif_scores, classif_intervals))
 
     # tSNE, clustering
 
