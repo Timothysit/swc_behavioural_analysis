@@ -304,29 +304,14 @@ def rgb_to_bgr(rgbcolor):
     return(bgr)
 
 
-def get_video_frames(video_file_path, coord_df):
+def get_color_scheme(palette, no_colors):
     """
-    Obtains video frames (and do some pre-processing to make things more manageable, such as gray-scaling)
-    :param video_file_path:
+    Define color palette and amount of colors from bokeh.all_palettes and convert this to bgr
+    :param palette:
+    :param no_colors:
     :return:
     """
-    cap = cv2.VideoCapture(video_file_path)
-
-    frame_num = 0
-    text_i = 0
-
-    # parameters for text
-
-    font = cv2.FONT_HERSHEY_SIMPLEX
-    bottomLeftCornerOfText = (1080, 960)
-    bottomRightCornerOfText = (0, 960)
-    fontScale = 3.5
-    fontColor = (255, 255, 255)  # default color if no
-    lineType = 2
-    thickness = 7
-
-    # color for each behaviour
-    colors_hex = all_palettes["Set2"][8]  # can change which color palette to use
+    colors_hex = all_palettes[palette][no_colors]  # can change which color palette to use
     colors_rgb = []
     colors_bgr = []
 
@@ -335,14 +320,89 @@ def get_video_frames(video_file_path, coord_df):
     for color in colors_rgb:  # change from rgb to bgr
         colors_bgr.append(rgb_to_bgr(color))
     colors = colors_bgr
+    return colors
+
+
+def color_behav(dataarray, array_index, behaviour, color_index, colors, position_index, frame, x_pos=1080):
+    """
+    Make string of the eight behaviours colored if they are present in the numpy array corresponding to the current frame
+    Make string default color if not
+    :param dataarray: numpyarray
+    :param array_index: int
+    :param behaviour: string
+    :param color_index: int
+    :param default_color: bgr tuple
+    :param position_index: int
+    :param frame:
+    :param x_pos:
+    :return:
+    """
+    # parameters for text
+    font = cv2.FONT_HERSHEY_SIMPLEX
+    positions = [100, 200, 300, 400, 500, 600, 700, 800]
+    fontScale = 2.3
+    default_color = (100, 100, 100)  # default color if no
+    lineType = 2
+    thickness = 6
+
+
+    if behaviour in dataarray[array_index]:
+        fontColor = colors[color_index]
+        frame = cv2.putText(frame, behaviour, (x_pos, positions[position_index]), font, fontScale, fontColor, thickness,
+                            lineType)
+    else:
+        fontColor = default_color
+        frame = cv2.putText(frame, behaviour, (x_pos, positions[position_index]), font, fontScale, fontColor, thickness,
+                            lineType)
+
+def color_cluster(current_cluster, cluster_array, cluster_array_i, colors, color_index, frame, position=(100, 960), change=False):
+
+
+        # text parameters
+        font = cv2.FONT_HERSHEY_SIMPLEX
+        fontScale = 3
+        lineType = 2
+        thickness = 6
+
+        if change == False:
+            frame = cv2.putText(frame, current_cluster, position, font, fontScale, colors[color_index], thickness, lineType)
+
+        if change == True:
+            if "cluster1" in cluster_array[cluster_array_i]:
+                current_cluster = "cluster1"
+            elif "cluster2" in cluster_array[cluster_array_i]:
+                current_cluster = "cluster2"
+            elif "cluster3" in cluster_array[cluster_array_i]:
+                current_cluster = "cluster3"
+            elif "cluster4" in cluster_array[cluster_array_i]:
+                current_cluster = "cluster4"
+
+            frame = cv2.putText(frame, current_cluster, position, font, fontScale, colors[color_index], thickness, lineType)
+
+def get_video_frames(video_file_path, coord_df):
+    """
+    Obtains video frames (and do some pre-processing to make things more manageable, such as gray-scaling)
+    :param video_file_path:
+    :return:
+    """
+    cap = cv2.VideoCapture(video_file_path)
+
+    # starting parameters
+    frame_num = 0
+    numpy_i = 0  # for indexing through our behaviour array
+    cluster_i = 0  # for counting up the frames until cluster change
+    cluster_array_i = 0  # for indexing throught he cluster array
+    x_pos = 1400  # position of text on x axis should be same for all behaviour titles
+    colors = get_color_scheme("Set1", 8)  # chose color scheme
+
+    # test array
+    cluster_array = np.array([("cluster1"), ("cluster2"), ("cluster3"), ("cluster4")]) #test cluster array
+    current_cluster = cluster_array[0]  # set the starting cluster to the first in the array
 
     # first attempt to plot video
     while (True):
         # Capture frame-by-frame
         ret, frame = cap.read()
-
-        # gray-scale the image
-        #frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
 
         horizontal_offset = 320
         vertical_offset = -30
@@ -417,43 +477,43 @@ def get_video_frames(video_file_path, coord_df):
         # Insert text describing behaviour:
 
         # test vector containing behaviour (remove when real data)
-        behav_vector = ["Nose2Body", "Nose2Body", "Nose2Body", "Nose2Body", "Nose2Nose", "Nose2Nose", "Nose2Nose", "Nose2Nose", "Nose2Genitals", "Nose2Genitals", "Nose2Genitals", "Nose2Genitals", "Above", "Above", "Above", "Above", "Following", "Following", "Following", "Following", "StandTogether", "StandTogether", "StandTogether", "StandTogether", "StandAlone", "StandAlone", "StandAlone", "StandAlone", "StandAlone", "WalkAlone", "WalkAlone", "WalkAlone", "WalkAlone", "WalkAlone", "Emmett", "Sucks", "Sucks", "Sucks", "Sucks"]
+        behav_array = np.array([("Nose2Body","Nose2Nose"),("Above", "Nose2Body", "Following")])
 
-        # assigning colors to behaviour of the frame
-        if behav_vector[text_i] == "Nose2Body":
-            fontColor = colors[0]
-        elif behav_vector[text_i] == "Nose2Nose":
-            fontColor = colors[1]
-        elif behav_vector[text_i] == "Nose2Genitals":
-            fontColor = colors[2]
-        elif behav_vector[text_i] == "Above":
-            fontColor = colors[3]
-        elif behav_vector[text_i] == "Following":
-            fontColor = colors[4]
-        elif behav_vector[text_i] == "StandTogether":
-            fontColor = colors[5]
-        elif behav_vector[text_i] == "StandAlone":
-            fontColor = colors[6]
-        elif behav_vector[text_i] == "WalkAlone":
-            fontColor = colors[7]
+        # using the numpy array as input and put colored text if in that frame
+        color_behav(behav_array, numpy_i,"Nose2Body", 0, colors, 0, frame, x_pos)
+        color_behav(behav_array, numpy_i, "Nose2Nose", 1, colors, 1, frame, x_pos)
+        color_behav(behav_array, numpy_i, "Nose2Genitals", 2, colors, 2, frame, x_pos)
+        color_behav(behav_array, numpy_i, "Above", 3, colors, 3, frame, x_pos)
+        color_behav(behav_array, numpy_i, "Following", 4, colors, 4, frame, x_pos)
+        color_behav(behav_array, numpy_i, "StandTogether", 5, colors, 5, frame, x_pos)
+        color_behav(behav_array, numpy_i, "StandAlone", 6, colors, 6, frame, x_pos)
+        color_behav(behav_array, numpy_i, "WalkAlone", 7, colors, 7, frame, x_pos)
+
+        # numpy array indexing
+        size = behav_array.shape[0]
+        if numpy_i <= size-2:
+            numpy_i += 1
         else:
-            fontColor = (255, 255, 255)
-
-        # add the text (rule-based classification)
-        frame = cv2.putText(frame, behav_vector[text_i], bottomLeftCornerOfText, font, fontScale, fontColor, thickness, lineType)
+            numpy_i = 0
 
         # add text for cluster number (unsupervised clustering)
-        # TODO: only update every second (ie. every second)
+        # should maybe do a if statement testing if size corresponds as opposed to resetting
+        cluster_size = cluster_array.shape[0]
+        if cluster_array_i >= cluster_size: #just to avoid it going out of range, should be according to array size really
+            cluster_array_i = 0
 
 
-        # iterate through the vector list (this shoulden't be neccesary for the real vector, only for the test)
-        if text_i <= len(behav_vector)-2:
-            text_i += 1
+        if cluster_i == 30:  # 30 frames per second go to next spot of cluster array
+            cluster_i = 0 #  reset the frame counting
+            color_cluster(current_cluster, cluster_array,cluster_array_i, colors, 7, frame, change = True)
+            cluster_array_i += 1
+
         else:
-            text_i = 0
+            cluster_i += 1
+            current_cluster = cluster_array[cluster_array_i]
+            color_cluster(current_cluster, cluster_array, cluster_array_i, colors, 7, frame, change=False)
 
         frame_num = frame_num + 1
-
 
         # Display the resulting frame
         cv2.imshow('frame', frame)
