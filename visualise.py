@@ -346,11 +346,11 @@ def color_behav(dataarray, array_index, behaviour, color_index, colors, position
     thickness = 6
 
 
-    if behaviour in dataarray[array_index]:
+    if dataarray[array_index] == 0.0:
         fontColor = colors[color_index]
         frame = cv2.putText(frame, behaviour, (x_pos, positions[position_index]), font, fontScale, fontColor, thickness,
                             lineType)
-    else:
+    elif ataarray[array_index] == 1.0:
         fontColor = default_color
         frame = cv2.putText(frame, behaviour, (x_pos, positions[position_index]), font, fontScale, fontColor, thickness,
                             lineType)
@@ -379,7 +379,7 @@ def color_cluster(current_cluster, cluster_array, cluster_array_i, colors, color
 
             frame = cv2.putText(frame, current_cluster, position, font, fontScale, colors[color_index], thickness, lineType)
 
-def get_video_frames(video_file_path, coord_df):
+def get_video_frames(video_file_path, coord_df, add_behaviour = True):
     """
     Obtains video frames (and do some pre-processing to make things more manageable, such as gray-scaling)
     :param video_file_path:
@@ -398,6 +398,25 @@ def get_video_frames(video_file_path, coord_df):
     # test array
     cluster_array = np.array([("cluster1"), ("cluster2"), ("cluster3"), ("cluster4")]) #test cluster array
     current_cluster = cluster_array[0]  # set the starting cluster to the first in the array
+
+    #load in behaviour
+    if add_behaviour == True:
+        behav_file_path = 'data/classification.pkl'
+        with open(behav_file_path, 'rb') as f:
+
+
+            classification_df = pickle.load(f)
+
+    nose2body = classification_df["nose2body"]
+    nose2nose = classification_df["nose2nose"]
+    nose2genitals = classification_df["nose2genitals"]
+    above = classification_df["above"]
+    following = classification_df["following"]
+    standtogether = classification_df["standTogether"]
+    standAlone = classification_df["standAlone"]
+    walkAlone = classification_df["walkAlone"]
+
+    print(classification_df)
 
     # first attempt to plot video
     while (True):
@@ -477,24 +496,24 @@ def get_video_frames(video_file_path, coord_df):
         # Insert text describing behaviour:
 
         # test vector containing behaviour (remove when real data)
-        behav_array = np.array([("Nose2Body","Nose2Nose"),("Above", "Nose2Body", "Following")])
+        #behav_array = np.array([("Nose2Body","Nose2Nose"),("Above", "Nose2Body", "Following")])
 
         # using the numpy array as input and put colored text if in that frame
-        color_behav(behav_array, numpy_i,"Nose2Body", 0, colors, 0, frame, x_pos)
-        color_behav(behav_array, numpy_i, "Nose2Nose", 1, colors, 1, frame, x_pos)
-        color_behav(behav_array, numpy_i, "Nose2Genitals", 2, colors, 2, frame, x_pos)
-        color_behav(behav_array, numpy_i, "Above", 3, colors, 3, frame, x_pos)
-        color_behav(behav_array, numpy_i, "Following", 4, colors, 4, frame, x_pos)
-        color_behav(behav_array, numpy_i, "StandTogether", 5, colors, 5, frame, x_pos)
-        color_behav(behav_array, numpy_i, "StandAlone", 6, colors, 6, frame, x_pos)
-        color_behav(behav_array, numpy_i, "WalkAlone", 7, colors, 7, frame, x_pos)
+        color_behav(nose2body, numpy_i,"Nose2Body", 0, colors, 0, frame, x_pos)
+        #color_behav(behav_array, numpy_i, "Nose2Nose", 1, colors, 1, frame, x_pos)
+        #color_behav(behav_array, numpy_i, "Nose2Genitals", 2, colors, 2, frame, x_pos)
+        #color_behav(behav_array, numpy_i, "Above", 3, colors, 3, frame, x_pos)
+        #color_behav(behav_array, numpy_i, "Following", 4, colors, 4, frame, x_pos)
+        #color_behav(behav_array, numpy_i, "StandTogether", 5, colors, 5, frame, x_pos)
+        #color_behav(behav_array, numpy_i, "StandAlone", 6, colors, 6, frame, x_pos)
+        #color_behav(behav_array, numpy_i, "WalkAlone", 7, colors, 7, frame, x_pos)
 
         # numpy array indexing
-        size = behav_array.shape[0]
-        if numpy_i <= size-2:
-            numpy_i += 1
-        else:
-            numpy_i = 0
+        #size = behav_array.shape[0]
+        #if numpy_i <= size-2:
+        #    numpy_i += 1
+        #else:
+        #    numpy_i = 0
 
         # add text for cluster number (unsupervised clustering)
         # should maybe do a if statement testing if size corresponds as opposed to resetting
