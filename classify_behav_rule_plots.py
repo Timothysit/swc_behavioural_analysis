@@ -56,10 +56,14 @@ def make_plots():
     plt.ylim((0, 1))
     plt.ylabel('Proportion')  # [classified (100ms) intervals / all intervals]
     seaborn.despine(top=True, right=True)
-    plt.show()
     plt.savefig('./data/classification_rule_based_prop' + ext, dpi=dpi)
+    plt.show()
+
 
     pass
 
 
-make_plots()
+# make_plots()
+
+if __name__ == '__main__':
+    make_plots()
