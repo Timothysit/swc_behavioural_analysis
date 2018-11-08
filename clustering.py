@@ -26,6 +26,10 @@ from bokeh.io import export_png
 from moviepy.video.io.ffmpeg_tools import ffmpeg_extract_subclip
 from itertools import groupby
 
+# feature analysis
+from sklearn import preprocessing
+
+
 
 # categorical heatmap
 import catheat
@@ -213,6 +217,40 @@ def extract_cluster_video(cluster_labels, cut_video = False, video_path = None, 
 
     return cluster_max_time
 
+def viz_cluster_factors(coord_df_binned, cluster_labels):
+    """
+    Visualise the value of each feature for each cluster (using a heatmap)
+    :param coord_df_binned:
+    :param cluster_labels:
+    :return:
+    """
+
+    # scale features
+    min_max_scaler = preprocessing.MinMaxScaler()
+    x = coord_df_binned.values
+    x_scaled = min_max_scaler.fit_transform(x)
+
+    coord_df_binned_normal = pd.DataFrame(x_scaled)
+
+    # coord_df_binned_normal['cluster'] = pd.Series(cluster_labels, dtype = 'category')
+
+    # coord_df_binned_normal = coord_df_binned_normal.sort_values(coord_df_binned_normal['cluster'] )
+
+    fig, axn = plt.subplots(2, 2, sharex=True, sharey=False)
+    cbar_ax = fig.add_axes([.91, .3, .03, .4])
+    for i, ax in enumerate(axn.flat):
+        sns.heatmap(coord_df_binned_normal[cluster_labels == i], ax=ax,
+                    cbar=i == 0,
+                    vmin=0, vmax=1,
+                    cmap = "YlGnBu",
+                    cbar_kws = {'label': 'Scaled score'},
+                    cbar_ax = None if i else cbar_ax)
+        ax.tick_params(axis='both', which='both', length=0)
+
+    fig.text(0.5, 0.04, 'Behavioural Feature', ha = 'center', fontsize= 14)
+    fig.text(0.04, 0.5, 'Time bin', va = 'center', rotation = 'vertical', fontsize=14)
+    plt.show()
+
 
 
 def main():
@@ -255,15 +293,18 @@ def main():
     labels = cluster(tsne_results, method = 'kmeans', n_clusters = 4)
 
     # use the label to extract videos
-    extract_cluster_video(labels, cut_video = True, video_path = '/media/timothysit/Seagate Expansion Drive1/18_10_29_mf_interaction_right.avi')
+    # extract_cluster_video(labels, cut_video = True, video_path = '/media/timothysit/Seagate Expansion Drive1/18_10_29_mf_interaction_right.avi')
+
+    # feature analysis on clusters
+    viz_cluster_factors(coord_df_binned, labels)
 
     # plot cluster
-    viz_cluster(tsne_results, labels)
+    # viz_cluster(tsne_results, labels)
 
     # extract cluster time bins
 
     # visualise clusters over time
-    viz_cluster_ethogram(labels, method = 'bokeh')
+    # viz_cluster_ethogram(labels, method = 'bokeh')
 
 if __name__ == '__main__':
     main()
