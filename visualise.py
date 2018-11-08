@@ -319,6 +319,7 @@ def get_video_frames(video_file_path, coord_df):
 
     font = cv2.FONT_HERSHEY_SIMPLEX
     bottomLeftCornerOfText = (1080, 960)
+    bottomRightCornerOfText = (0, 960)
     fontScale = 3.5
     fontColor = (255, 255, 255)  # default color if no
     lineType = 2
@@ -438,8 +439,12 @@ def get_video_frames(video_file_path, coord_df):
         else:
             fontColor = (255, 255, 255)
 
-        # add the text
-        frame = cv2.putText(frame, behav_vector[text_i], bottomLeftCornerOfText, font, fontScale, fontColor, thickness, lineType )
+        # add the text (rule-based classification)
+        frame = cv2.putText(frame, behav_vector[text_i], bottomLeftCornerOfText, font, fontScale, fontColor, thickness, lineType)
+
+        # add text for cluster number (unsupervised clustering)
+        # TODO: only update every second (ie. every second)
+
 
         # iterate through the vector list (this shoulden't be neccesary for the real vector, only for the test)
         if text_i <= len(behav_vector)-2:
