@@ -7,7 +7,7 @@ import load_data # for the filtering functions
 from scipy import fftpack
 import cv2 # for dealing with video
 from bokeh.palettes import all_palettes
-
+import skvideo.io # for saving video
 
 def visualise_distance(distance_df):
     """
@@ -403,7 +403,10 @@ def get_video_frames(video_file_path, coord_df, add_behaviour = True, add_cluste
         with open(cluster_file_path, 'rb') as f:
             cluster_df = pickle.load(f)
 
-    # first attempt to plot video
+    # initiate video writer (for saving the video)
+    writer = skvideo.io.FFmpegWriter("mouse_behaviour.mp4")
+
+    # Plot video
     while (True):
         # Capture frame-by-frame
         ret, frame = cap.read()
@@ -515,6 +518,9 @@ def get_video_frames(video_file_path, coord_df, add_behaviour = True, add_cluste
         numpy_i += 1
         frame_num = frame_num + 1
 
+        # save video
+        writer.writeFrame(frame)
+
         # Display the resulting frame
         cv2.imshow('frame', frame)
         if cv2.waitKey(1) & 0xFF == ord('q'):
@@ -523,7 +529,7 @@ def get_video_frames(video_file_path, coord_df, add_behaviour = True, add_cluste
     # When everything done, release the capture
     cap.release()
     cv2.destroyAllWindows()
-
+    writer.close()
 
     frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
     # width = int(cap.get(cv2.CV_CAP_PROP_FRAME_WIDTH))
@@ -537,7 +543,7 @@ def viz_ethogram(ethogram_vec):
     :param ethogram_vec:
     :return:
     """
-
+    pass
 
 
 
