@@ -339,47 +339,33 @@ def color_behav(dataarray, array_index, behaviour, color_index, colors, position
     """
     # parameters for text
     font = cv2.FONT_HERSHEY_SIMPLEX
-    positions = [100, 200, 300, 400, 500, 600, 700, 800]
+    positions = [150, 250, 350, 450, 550, 650, 750, 850]
     fontScale = 2.3
     default_color = (100, 100, 100)  # default color if no
     lineType = 2
     thickness = 6
 
-
-    if dataarray[array_index] == 0.0:
+    if dataarray[array_index] == 1.0:
         fontColor = colors[color_index]
         frame = cv2.putText(frame, behaviour, (x_pos, positions[position_index]), font, fontScale, fontColor, thickness,
                             lineType)
-    elif ataarray[array_index] == 1.0:
+
+    elif dataarray[array_index] == 0.0:
+
         fontColor = default_color
         frame = cv2.putText(frame, behaviour, (x_pos, positions[position_index]), font, fontScale, fontColor, thickness,
                             lineType)
 
-def color_cluster(current_cluster, cluster_array, cluster_array_i, colors, color_index, frame, position=(100, 960), change=False):
-
-
+def color_cluster(current_cluster, cluster_array, cluster_array_i, colors, color_index, frame, position=(50, 940), change=False):
         # text parameters
         font = cv2.FONT_HERSHEY_SIMPLEX
         fontScale = 3
         lineType = 2
-        thickness = 6
+        thickness = 7
 
-        if change == False:
-            frame = cv2.putText(frame, current_cluster, position, font, fontScale, colors[color_index], thickness, lineType)
+        frame = cv2.putText(frame, current_cluster, position, font, fontScale, colors[color_index], thickness, lineType)
 
-        if change == True:
-            if "cluster1" in cluster_array[cluster_array_i]:
-                current_cluster = "cluster1"
-            elif "cluster2" in cluster_array[cluster_array_i]:
-                current_cluster = "cluster2"
-            elif "cluster3" in cluster_array[cluster_array_i]:
-                current_cluster = "cluster3"
-            elif "cluster4" in cluster_array[cluster_array_i]:
-                current_cluster = "cluster4"
-
-            frame = cv2.putText(frame, current_cluster, position, font, fontScale, colors[color_index], thickness, lineType)
-
-def get_video_frames(video_file_path, coord_df, add_behaviour = True):
+def get_video_frames(video_file_path, coord_df, add_behaviour = True, add_clusters = True):
     """
     Obtains video frames (and do some pre-processing to make things more manageable, such as gray-scaling)
     :param video_file_path:
@@ -393,18 +379,13 @@ def get_video_frames(video_file_path, coord_df, add_behaviour = True):
     cluster_i = 0  # for counting up the frames until cluster change
     cluster_array_i = 0  # for indexing throught he cluster array
     x_pos = 1400  # position of text on x axis should be same for all behaviour titles
-    colors = get_color_scheme("Set1", 8)  # chose color scheme
+    colors = get_color_scheme("Set1", 8)  # chose color scheme behaviour
+    colors2 = get_color_scheme("GnBu",4)  # get color scheme for clusters
 
-    # test array
-    cluster_array = np.array([("cluster1"), ("cluster2"), ("cluster3"), ("cluster4")]) #test cluster array
-    current_cluster = cluster_array[0]  # set the starting cluster to the first in the array
-
-    #load in behaviour
+    #  load in behaviour
     if add_behaviour == True:
         behav_file_path = 'data/classification.pkl'
         with open(behav_file_path, 'rb') as f:
-
-
             classification_df = pickle.load(f)
 
     nose2body = classification_df["nose2body"]
@@ -416,7 +397,11 @@ def get_video_frames(video_file_path, coord_df, add_behaviour = True):
     standAlone = classification_df["standAlone"]
     walkAlone = classification_df["walkAlone"]
 
-    print(classification_df)
+    # load in clusters
+    if add_clusters == True:
+        cluster_file_path = 'data/cluster_result.pkl'
+        with open(cluster_file_path, 'rb') as f:
+            cluster_df = pickle.load(f)
 
     # first attempt to plot video
     while (True):
@@ -494,44 +479,40 @@ def get_video_frames(video_file_path, coord_df, add_behaviour = True):
                          color=(0, 0, 0), thickness=1)
 
         # Insert text describing behaviour:
-
-        # test vector containing behaviour (remove when real data)
-        #behav_array = np.array([("Nose2Body","Nose2Nose"),("Above", "Nose2Body", "Following")])
-
-        # using the numpy array as input and put colored text if in that frame
         color_behav(nose2body, numpy_i,"Nose2Body", 0, colors, 0, frame, x_pos)
-        #color_behav(behav_array, numpy_i, "Nose2Nose", 1, colors, 1, frame, x_pos)
-        #color_behav(behav_array, numpy_i, "Nose2Genitals", 2, colors, 2, frame, x_pos)
-        #color_behav(behav_array, numpy_i, "Above", 3, colors, 3, frame, x_pos)
-        #color_behav(behav_array, numpy_i, "Following", 4, colors, 4, frame, x_pos)
-        #color_behav(behav_array, numpy_i, "StandTogether", 5, colors, 5, frame, x_pos)
-        #color_behav(behav_array, numpy_i, "StandAlone", 6, colors, 6, frame, x_pos)
-        #color_behav(behav_array, numpy_i, "WalkAlone", 7, colors, 7, frame, x_pos)
+        color_behav(nose2nose, numpy_i, "Nose2Nose", 1, colors, 1, frame, x_pos)
+        color_behav(nose2genitals, numpy_i, "Nose2Genitals", 2, colors, 2, frame, x_pos)
+        color_behav(above, numpy_i, "Above", 3, colors, 3, frame, x_pos)
+        color_behav(following, numpy_i, "Following", 4, colors, 4, frame, x_pos)
+        color_behav(standtogether, numpy_i, "StandTogether", 5, colors, 5, frame, x_pos)
+        color_behav(standAlone, numpy_i, "StandAlone", 6, colors, 6, frame, x_pos)
+        color_behav(walkAlone, numpy_i, "WalkAlone", 7, colors, 7, frame, x_pos)
 
-        # numpy array indexing
-        #size = behav_array.shape[0]
-        #if numpy_i <= size-2:
-        #    numpy_i += 1
-        #else:
-        #    numpy_i = 0
 
-        # add text for cluster number (unsupervised clustering)
-        # should maybe do a if statement testing if size corresponds as opposed to resetting
-        cluster_size = cluster_array.shape[0]
-        if cluster_array_i >= cluster_size: #just to avoid it going out of range, should be according to array size really
-            cluster_array_i = 0
-
+        # Define current cluster
+        if cluster_df[cluster_array_i] == 0:
+            current_cluster = "Cluster1"
+            color_index = 0
+        if cluster_df[cluster_array_i] == 1:
+            current_cluster = "Cluster2"
+            color_index = 1
+        if cluster_df[cluster_array_i] == 2:
+            current_cluster = "Cluster3"
+            color_index = 2
+        if cluster_df[cluster_array_i] == 3:
+            current_cluster = "Cluster4"
+            color_index = 3
 
         if cluster_i == 30:  # 30 frames per second go to next spot of cluster array
             cluster_i = 0 #  reset the frame counting
-            color_cluster(current_cluster, cluster_array,cluster_array_i, colors, 7, frame, change = True)
+            color_cluster(current_cluster, cluster_df,cluster_array_i, colors2, color_index, frame, change = True)
             cluster_array_i += 1
 
         else:
             cluster_i += 1
-            current_cluster = cluster_array[cluster_array_i]
-            color_cluster(current_cluster, cluster_array, cluster_array_i, colors, 7, frame, change=False)
+            color_cluster(current_cluster, cluster_df, cluster_array_i, colors2, color_index, frame, change=False)
 
+        numpy_i += 1
         frame_num = frame_num + 1
 
         # Display the resulting frame
