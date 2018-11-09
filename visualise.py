@@ -323,7 +323,7 @@ def get_color_scheme(palette, no_colors):
     return colors
 
 
-def color_behav(dataarray, array_index, behaviour, color_index, colors, position_index, frame, x_pos=1080):
+def color_behav(dataarray, array_index, behaviour, color_index, colors, position_index, frame, x_pos=1080, change = True):
     """
     Make string of the eight behaviours colored if they are present in the numpy array corresponding to the current frame
     Make string default color if not
@@ -345,13 +345,19 @@ def color_behav(dataarray, array_index, behaviour, color_index, colors, position
     lineType = 2
     thickness = 6
 
-    if dataarray[array_index] == 1.0:
-        fontColor = colors[color_index]
-        frame = cv2.putText(frame, behaviour, (x_pos, positions[position_index]), font, fontScale, fontColor, thickness,
-                            lineType)
+    if change == True:
+        if dataarray[array_index] == 1.0:
+            fontColor = colors[color_index]
+            frame = cv2.putText(frame, behaviour, (x_pos, positions[position_index]), font, fontScale, fontColor, thickness,
+                                lineType)
 
-    elif dataarray[array_index] == 0.0:
+        elif dataarray[array_index] == 0.0:
 
+            fontColor = default_color
+            frame = cv2.putText(frame, behaviour, (x_pos, positions[position_index]), font, fontScale, fontColor, thickness,
+                                lineType)
+
+    else:
         fontColor = default_color
         frame = cv2.putText(frame, behaviour, (x_pos, positions[position_index]), font, fontScale, fontColor, thickness,
                             lineType)
@@ -482,7 +488,10 @@ def get_video_frames(video_file_path, coord_df, add_behaviour = True, add_cluste
                          color=(0, 0, 0), thickness=1)
 
         # Insert text describing behaviour:
-        color_behav(nose2body, numpy_i,"Nose2Body", 0, colors, 0, frame, x_pos)
+        if frame_num % 3 == 0: #  change to next behaviour
+            numpy_i += 1
+
+        color_behav(nose2body, numpy_i, "Nose2Body", 0, colors, 0, frame, x_pos)
         color_behav(nose2nose, numpy_i, "Nose2Nose", 1, colors, 1, frame, x_pos)
         color_behav(nose2genitals, numpy_i, "Nose2Genitals", 2, colors, 2, frame, x_pos)
         color_behav(above, numpy_i, "Above", 3, colors, 3, frame, x_pos)
@@ -515,7 +524,7 @@ def get_video_frames(video_file_path, coord_df, add_behaviour = True, add_cluste
             cluster_i += 1
             color_cluster(current_cluster, cluster_df, cluster_array_i, colors2, color_index, frame, change=False)
 
-        numpy_i += 1
+
         frame_num = frame_num + 1
 
         # save video
