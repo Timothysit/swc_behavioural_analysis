@@ -1,6 +1,8 @@
-# swc_behavioural_analysis
+# SWC Beahvioural Analysis
 
-Behavioural analysis for SWC course
+Behavioural analysis for SWC course. 
+Written by: Svenja Nierwetberg, Sarah Olesen, Lars Rollik, Timothy Sit
+Slides: https://docs.google.com/presentation/d/164DDu78pxxoOldW_rskDvDakPQWeWarHOaZJyd7NqN4/edit?usp=sharing
 
 ## Things to do 
 
@@ -21,18 +23,7 @@ Behavioural analysis for SWC course
 
 ## How the raw data is organised
 
-# TS Tasks 
 
- - [ ] obtain and save unfiltered body part location estimate (in progress)
- - [ ] smoothing (coordinates, and maybe distance estimates?) 
- - [ ] plotting position estimate on top of video 
- - [ ] help out with ethogram / beahvioural classification 
- - [ ] write code to visualise ethogram
- - [ ] plot animation of distances over time
- - [ ] save plots in high quality (300 dpi)
-    - [ ] save plot comparing filter (time range needs to be better)
- - [ ] export animations to mp4
-    - [ ] add time (sec) instead of frames
  
  
  
