@@ -29,6 +29,12 @@ from itertools import groupby
 # feature analysis
 from sklearn import preprocessing
 
+# Dynamic time warping clustering
+from tslearn.clustering import TimeSeriesKMeans
+
+# Loading bar (for long for loops)
+from tqdm import tqdm
+
 
 
 # categorical heatmap
@@ -66,12 +72,55 @@ def run_tsne(dataframe):
 
     return tsne_results
 
-def cluster(dim_reduced_data, method = 'kmeans', n_clusters = 4):
+def cluster(dim_reduced_data, method = 'kmeans', n_clusters = 4, compute_distance = False):
+    """
+
+    :param dim_reduced_data:
+    :param method: method for performing clustering,
+    if tslearn, you need to feed in the raw data, instead of dim_reduced_data
+    :param n_clusters:
+    :param compute_distance:
+    :return:
+    """
     if method == 'kmeans':
         kmeans = KMeans(n_clusters = n_clusters)
         kmeans.fit(dim_reduced_data)
         clustered_labels = kmeans.predict(dim_reduced_data)
-    return clustered_labels
+        return clustered_labels
+    if compute_distance:
+        """
+        Find centroid, the compute and the distance of each point from the cluster
+        """
+        pass
+    if method == 'tslearn':
+        # Note that this takes the raw data instead of dim_reduced_data
+        coord_df = dim_reduced_data
+
+        # TODO: Pre-processing, normalise or scale data
+
+        # Reshape data to be numTimeSeries x length x numVariable
+        # a not-so-elegant approach to this (bin each variable), then layer then one behind another
+        time_bin_width = int(30)
+        if coord_df.shape[0] % time_bin_width != 0:
+            trim_length = (coord_df.shape[0] // time_bin_width) * time_bin_width
+            coord_df = coord_df[:trim_length]
+        num_sample = int(coord_df.shape[0] / time_bin_width)
+        num_features = int(coord_df.shape[1])
+        multi_var_ts_3D = np.zeros((num_sample, time_bin_width, num_features))
+        feature_idx = 0
+        for feature in coord_df:
+            multi_var_ts_3D[:, :, feature_idx] = coord_df[feature].values.reshape(-1, time_bin_width)
+            feature_idx + 1
+        # run dynamic time warping and clustering
+
+        dtw_cluster_model = TimeSeriesKMeans(n_clusters = n_clusters, metric = 'dtw')
+        dtw_cluster_model = dtw_cluster_model.fit(multi_var_ts_3D)
+        dtw_cluster_labels = dtw_cluster_model.predict(multi_var_ts_3D)
+        dtw_cluster_inertia = dtw_cluster_model.inertia_
+
+
+        return dtw_cluster_labels, dtw_cluster_inertia
+
 
 
 def viz_cluster(dim_reduced_df, clustered_labels = None):
@@ -99,6 +148,30 @@ def extract_cluster_time(clusterd_labels, time_bin):
     :param clusterd_labels:
     :return:
     """
+    pass
+
+
+def find_optimal_k(data, method = 'dtw_k_means'):
+    """
+    Find the optimal number of clusters for k-means clustering
+    :return:
+    """
+    num_cluster_list = np.arange(3, 10) # list of clusters to try out
+
+    if method == 'dtw_k_means':
+        inertia_store = list()
+        for num_cluster in tqdm(num_cluster_list):
+            _, dtw_cluster_inertia = cluster(data, method = 'tslearn', n_clusters = num_cluster)
+            inertia_store.append(dtw_cluster_inertia)
+
+    plt.figure()
+    plt.plot(num_cluster_list, inertia_store)
+    sns.despine(top = True, right = True)
+    plt.xlabel('Number of clusters')
+    plt.ylabel('Inertia')
+    plt.show()
+
+
 
 
 
@@ -165,9 +238,10 @@ def extract_cluster_video(cluster_labels, cut_video = False, video_path = None, 
     :param cluster_labels: vector giving the label for each time frame
     :return cluster_max_time: dataframe containing the max start and end time for each label
     """
+    num_unique_labels = len(np.unique(cluster_labels))
 
     cluster_max_time = dict()
-    cluster_max_time['Cluster'] = np.arange(0, 4)
+    cluster_max_time['Cluster'] = np.arange(0, num_unique_labels)
 
     groups = groupby(cluster_labels)
     label_seq = list()
@@ -188,6 +262,11 @@ def extract_cluster_video(cluster_labels, cut_video = False, video_path = None, 
         duration_max_idx = np.intersect1d(np.where(np.array(label_seq) == label)[0],
                                           np.where(np.array(duration_seq) == duration_max)[0]
                                         )
+        # if more than one maximum, then choose the first one
+        # TODO: think about how to improve about this implementation (maybe using both?)
+        if len(duration_max_idx) > 1:
+            duration_max_idx = duration_max_idx[0]
+
         start_time = sum(duration_seq[0:int(duration_max_idx)])
         end_time = start_time + duration_max
 
@@ -286,6 +365,7 @@ def viz_cluster_prop(cluster_labels, save_fig = True):
     plt.show()
 
 
+
 def main():
     # test data
     t_sne_test_df = pd.DataFrame({"frame": np.array([1, 2, 3, 4, 5]),
@@ -337,14 +417,21 @@ def main():
     # extract cluster time bins
 
     # visualise clusters over time
-    viz_cluster_ethogram(labels, method = 'bokeh')
+    # viz_cluster_ethogram(labels, method = 'bokeh')
 
     # save clustering results
     # with open('data/cluster_result' + '.pkl', 'wb') as f:
     #     pickle.dump(labels, f)
 
     # visualise cluster proportions
-    viz_cluster_prop(labels)
+    # viz_cluster_prop(labels)
+
+    # Dynamic time warping clutering
+
+    dtw_labels, _ = cluster(coord_df, method = 'tslearn', n_clusters = 7)
+    extract_cluster_video(dtw_labels, cut_video=True,
+                          video_path='/media/timothysit/Seagate Expansion Drive1/18_10_29_mf_interaction_right.avi')
+    # find_optimal_k(data = coord_df, method = 'dtw_k_means')
 
 
 if __name__ == '__main__':
